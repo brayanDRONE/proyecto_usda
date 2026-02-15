@@ -1,0 +1,15 @@
+.app {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.main-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.content-wrapper {
+  width: 100%;
+}

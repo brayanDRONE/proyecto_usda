@@ -1,0 +1,136 @@
+.subscription-expired-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.expired-card {
+  text-align: center;
+  padding: 3rem 2rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.expired-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border: 3px solid #fca5a5;
+  border-radius: 50%;
+  color: #dc2626;
+  margin-bottom: 1.5rem;
+}
+
+.expired-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #dc2626;
+  margin: 0 0 1rem 0;
+}
+
+.expired-message {
+  font-size: 1.125rem;
+  color: #374151;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.expired-info {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.expired-info p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.contact-section {
+  text-align: left;
+  background: linear-gradient(to bottom, #eff6ff, #dbeafe);
+  border: 2px solid #93c5fd;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.contact-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 1rem 0;
+}
+
+.contact-section ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #374151;
+}
+
+.contact-section li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.contact-section li:last-child {
+  margin-bottom: 0;
+}
+
+.support-info {
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.support-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.support-text {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .expired-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .expired-icon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .expired-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .expired-title {
+    font-size: 1.5rem;
+  }
+}
