@@ -126,6 +126,41 @@
   color: #6b7280;
 }
 
+/* Stage Sampling Info */
+.stage-sampling-info {
+  margin: 2rem 0;
+}
+
+.info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: #f9fafb;
+  line-height: 1.6;
+}
+
+.info-box svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.info-box-primary {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+  color: #1e40af;
+}
+
+.info-box-primary svg {
+  color: #3b82f6;
+}
+
+.info-box strong {
+  font-weight: 600;
+}
+
 /* Lista de Cajas */
 .boxes-section {
   margin-bottom: 2rem;

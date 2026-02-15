@@ -2,6 +2,7 @@
 Modelos para el sistema de inspecciones SAG-USDA.
 """
 from django.db import models
+from django.db.models import JSONField
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -155,6 +156,20 @@ class Inspection(models.Model):
     cantidad_pallets = models.IntegerField(
         validators=[MinValueValidator(1)],
         verbose_name='Cantidad de Pallets'
+    )
+    
+    # Muestreo por etapa - Cajas por pallet
+    boxes_per_pallet = JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Cajas por Pallet',
+        help_text='Array con cantidad de cajas en cada pallet (solo para muestreo por etapa)'
+    )
+    selected_pallets = JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Pallets Seleccionados',
+        help_text='Índices de pallets seleccionados para muestreo (solo para muestreo por etapa)'
     )
     
     # Metadata

@@ -106,8 +106,17 @@ function SamplingResultView({ result, onNewInspection }) {
     doc.text(': ' + (inspection.tipo_muestreo === 'NORMAL' ? 'Normal' : 'Por Etapa'), leftValCol, yPos);
     yPos += 6;
     
-    doc.text('Pallets a Muestrear', leftCol, yPos);
-    doc.text(': (No zanja).', leftValCol, yPos);
+    // Para muestreo por etapa, mostrar pallets seleccionados
+    if (inspection.tipo_muestreo === 'POR_ETAPA' && result.stage_sampling) {
+      doc.text('Pallets Seleccionados', leftCol, yPos);
+      const selectedPalletsText = result.stage_sampling.selected_pallets.map(p => p + 1).join(', ');
+      doc.text(`: ${selectedPalletsText}`, leftValCol, yPos);
+      yPos += 6;
+    } else {
+      doc.text('Pallets a Muestrear', leftCol, yPos);
+      doc.text(': (No zanja).', leftValCol, yPos);
+      yPos += 6;
+    }
     
     // COLUMNA DERECHA
     yPos = 58; // Reset a la misma altura que columna izquierda
@@ -397,6 +406,27 @@ function SamplingResultView({ result, onNewInspection }) {
               <div className="stat-unit">cajas a inspeccionar</div>
             </div>
           </div>
+
+          {/* Información adicional para Muestreo por Etapa */}
+          {inspection.tipo_muestreo === 'POR_ETAPA' && result.stage_sampling && (
+            <div className="stage-sampling-info">
+              <div className="info-box info-box-primary">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <strong>Muestreo por Etapa:</strong> Se seleccionaron {result.stage_sampling.selected_pallets.length} pallets 
+                  ({Math.round((result.stage_sampling.selected_pallets.length / inspection.cantidad_pallets) * 100)}% del total)
+                  <div style={{ marginTop: '8px' }}>
+                    <strong>Pallets Seleccionados:</strong> {result.stage_sampling.selected_pallets.map(p => p + 1).join(', ')}
+                  </div>
+                  <div style={{ marginTop: '4px', fontSize: '0.9em', opacity: '0.9' }}>
+                    Total de pallets: {inspection.cantidad_pallets}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Lista de Cajas */}
           <div className="boxes-section">

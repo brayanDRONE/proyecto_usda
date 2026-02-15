@@ -311,3 +311,169 @@ def validar_datos_inspeccion(data):
             errores.append("La cantidad de pallets debe ser un número válido")
     
     return len(errores) == 0, errores
+
+
+# ==================== MUESTREO POR ETAPA ====================
+
+def validate_stage_sampling(total_pallets, boxes_per_pallet, total_boxes_lot):
+    """
+    Valida restricciones normativas SAG/USDA para muestreo por etapa (Cap. 3.9.2.1).
+    
+    Args:
+        total_pallets (int): Número total de pallets
+        boxes_per_pallet (list): Lista con cantidad de cajas en cada pallet
+        total_boxes_lot (int): Tamaño total del lote
+    
+    Returns:
+        tuple: (es_valido: bool, errores: list, warnings: list)
+    """
+    errores = []
+    warnings = []
+    
+    # Validación básica de datos
+    if not boxes_per_pallet or len(boxes_per_pallet) != total_pallets:
+        errores.append(f"Debe especificar cajas para {total_pallets} pallets")
+        return False, errores, warnings
+    
+    if sum(boxes_per_pallet) != total_boxes_lot:
+        total_ingresado = sum(boxes_per_pallet)
+        if total_ingresado > total_boxes_lot:
+            errores.append(f"Total de cajas ingresadas ({total_ingresado}) excede el tamaño del lote ({total_boxes_lot})")
+        else:
+            warnings.append(f"Total de cajas ingresadas ({total_ingresado}) es menor al tamaño del lote ({total_boxes_lot})")
+    
+    if any(cajas <= 0 for cajas in boxes_per_pallet):
+        errores.append("Todos los pallets deben tener al menos 1 caja")
+        return False, errores, warnings
+    
+    # 1) VALIDAR MÍNIMO DE PALLETS (≥ 6)
+    if total_pallets < 6:
+        errores.append("El muestreo por etapa requiere mínimo 6 pallets")
+        return False, errores, warnings
+    
+    # 2) HOMOGENEIDAD DE PALLETS (solo si total_pallets ≤ 15)
+    # Para lotes > 15 pallets NO se aplica restricción de variación
+    if total_pallets <= 15:
+        promedio = total_boxes_lot / total_pallets
+        
+        for i, cajas in enumerate(boxes_per_pallet, 1):
+            variacion = abs(cajas - promedio) / promedio
+            if variacion > 0.30:  # 30%
+                errores.append(
+                    f"Pallet {i}: variación de {variacion*100:.1f}% excede el 30% permitido "
+                    f"(tiene {cajas} cajas, promedio: {promedio:.1f})"
+                )
+    
+    # 3) REGLA ESPECIAL PARA LOTES ≥ 10 PALLETS
+    if total_pallets >= 10:
+        promedio = total_boxes_lot / total_pallets
+        umbral_60 = promedio * 0.60
+        
+        pallets_bajo_umbral = [
+            i+1 for i, cajas in enumerate(boxes_per_pallet) 
+            if cajas < umbral_60
+        ]
+        
+        if len(pallets_bajo_umbral) > 1:
+            errores.append(
+                f"Solo un pallet puede tener menos del 60% del promedio ({umbral_60:.1f} cajas). "
+                f"Pallets que no cumplen: {', '.join(map(str, pallets_bajo_umbral))}"
+            )
+    
+    return len(errores) == 0, errores, warnings
+
+
+def select_stage_sampling_pallets(total_pallets):
+    """
+    Selecciona aleatoriamente el 25% de los pallets para muestreo por etapa.
+    Según manual SAG/USDA: redondeo hacia arriba (ceiling).
+    
+    Args:
+        total_pallets (int): Número total de pallets
+    
+    Returns:
+        list: Índices (1-based) de pallets seleccionados
+    """
+    # Calcular 25% con redondeo hacia arriba (ceiling) según normativa
+    cantidad_pallets = max(1, math.ceil(total_pallets * 0.25))
+    
+    # Seleccionar aleatoriamente
+    indices = random.sample(range(1, total_pallets + 1), cantidad_pallets)
+    indices.sort()
+    
+    return indices
+
+
+def distribute_samples_proportionally(boxes_per_pallet, selected_pallet_indices, total_sample_size):
+    """
+    Distribuye las cajas muestra proporcionalmente entre los pallets seleccionados.
+    
+    Args:
+        boxes_per_pallet (list): Cajas en cada pallet (1-based)
+        selected_pallet_indices (list): Índices de pallets seleccionados (1-based)
+        total_sample_size (int): Tamaño total de la muestra
+    
+    Returns:
+        dict: Diccionario con índice de pallet y cajas a muestrear de cada uno
+    """
+    # Calcular total de cajas en pallets seleccionados
+    total_boxes_selected = sum(boxes_per_pallet[i-1] for i in selected_pallet_indices)
+    
+    # Distribuir proporcionalmente
+    distribution = {}
+    cajas_asignadas = 0
+    
+    for i, pallet_idx in enumerate(selected_pallet_indices):
+        cajas_en_pallet = boxes_per_pallet[pallet_idx - 1]
+        
+        # Última iteración: asignar el resto
+        if i == len(selected_pallet_indices) - 1:
+            cajas_muestra = total_sample_size - cajas_asignadas
+        else:
+            # Calcular proporcionalmente
+            proporcion = cajas_en_pallet / total_boxes_selected
+            cajas_muestra = round(total_sample_size * proporcion)
+        
+        # No puede exceder el número de cajas en el pallet
+        cajas_muestra = min(cajas_muestra, cajas_en_pallet)
+        
+        distribution[pallet_idx] = cajas_muestra
+        cajas_asignadas += cajas_muestra
+    
+    return distribution
+
+
+def generate_stage_sampling_numbers(boxes_per_pallet, selected_pallet_indices, sample_distribution):
+    """
+    Genera números aleatorios de cajas para muestreo por etapa.
+    
+    Args:
+        boxes_per_pallet (list): Cajas en cada pallet (1-based indexing)
+        selected_pallet_indices (list): Índices de pallets seleccionados (1-based)
+        sample_distribution (dict): Cantidad de cajas a muestrear por pallet
+    
+    Returns:
+        list: Números de caja seleccionados (ordenados)
+    """
+    selected_boxes = []
+    offset = 0
+    
+    for pallet_idx in range(1, len(boxes_per_pallet) + 1):
+        cajas_en_pallet = boxes_per_pallet[pallet_idx - 1]
+        
+        # Si este pallet está seleccionado para muestreo
+        if pallet_idx in selected_pallet_indices:
+            cajas_a_muestrear = sample_distribution.get(pallet_idx, 0)
+            
+            if cajas_a_muestrear > 0:
+                # Generar números aleatorios dentro del rango del pallet
+                numeros_pallet = random.sample(
+                    range(offset + 1, offset + cajas_en_pallet + 1),
+                    min(cajas_a_muestrear, cajas_en_pallet)
+                )
+                selected_boxes.extend(numeros_pallet)
+        
+        offset += cajas_en_pallet
+    
+    selected_boxes.sort()
+    return selected_boxes

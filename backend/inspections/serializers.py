@@ -35,9 +35,10 @@ class InspectionSerializer(serializers.ModelSerializer):
             'id', 'exportador', 'establishment', 'establishment_name',
             'inspector_sag', 'contraparte_sag', 'fecha', 'hora',
             'especie', 'numero_lote', 'tamano_lote', 'tipo_muestreo',
-            'tipo_despacho', 'cantidad_pallets', 'created_at'
+            'tipo_despacho', 'cantidad_pallets', 'boxes_per_pallet', 
+            'selected_pallets', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at', 'fecha', 'hora']
+        read_only_fields = ['id', 'created_at', 'fecha', 'hora', 'selected_pallets']
     
     def validate_tamano_lote(self, value):
         if value <= 0:
@@ -86,6 +87,13 @@ class GenerarMuestreoSerializer(serializers.Serializer):
     tipo_muestreo = serializers.ChoiceField(choices=['NORMAL', 'POR_ETAPA'])
     tipo_despacho = serializers.CharField(max_length=100)
     cantidad_pallets = serializers.IntegerField(min_value=1)
+    
+    # Para muestreo por etapa
+    boxes_per_pallet = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=False,
+        allow_empty=True
+    )
     
     # Parámetro opcional para porcentaje (default: 2%)
     porcentaje_muestreo = serializers.DecimalField(

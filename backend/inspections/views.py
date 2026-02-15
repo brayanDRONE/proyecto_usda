@@ -15,7 +15,13 @@ from .serializers import (
     GenerarMuestreoSerializer
 )
 from .serializers_admin import EstablishmentThemeSerializer
-from .utils import calcular_muestreo
+from .utils import (
+    calcular_muestreo,
+    validate_stage_sampling,
+    select_stage_sampling_pallets,
+    distribute_samples_proportionally,
+    generate_stage_sampling_numbers
+)
 
 
 class EstablishmentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -117,6 +123,31 @@ class MuestreoViewSet(viewsets.ViewSet):
             }, status=status.HTTP_403_FORBIDDEN)
         
         try:
+            # Validaciones específicas para muestreo por etapa
+            if data['tipo_muestreo'] == 'POR_ETAPA':
+                boxes_per_pallet = data.get('boxes_per_pallet', [])
+                
+                if not boxes_per_pallet:
+                    return Response({
+                        'success': False,
+                        'message': 'Debe especificar las cajas por pallet para muestreo por etapa'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Validar restricciones SAG/USDA
+                es_valido, errores, warnings = validate_stage_sampling(
+                    total_pallets=data['cantidad_pallets'],
+                    boxes_per_pallet=boxes_per_pallet,
+                    total_boxes_lot=data['tamano_lote']
+                )
+                
+                if not es_valido:
+                    return Response({
+                        'success': False,
+                        'message': 'Validación de muestreo por etapa fallida',
+                        'errors': errores,
+                        'warnings': warnings
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
             # Crear la inspección
             inspection = Inspection.objects.create(
                 exportador=data['exportador'],
@@ -128,14 +159,52 @@ class MuestreoViewSet(viewsets.ViewSet):
                 tamano_lote=data['tamano_lote'],
                 tipo_muestreo=data['tipo_muestreo'],
                 tipo_despacho=data['tipo_despacho'],
-                cantidad_pallets=data['cantidad_pallets']
+                cantidad_pallets=data['cantidad_pallets'],
+                boxes_per_pallet=data.get('boxes_per_pallet', [])
             )
             
-            # Calcular muestreo usando la especie
-            resultado_muestreo = calcular_muestreo(
-                tamano_lote=data['tamano_lote'],
-                especie=data['especie']
-            )
+            # Calcular muestreo según el tipo
+            if data['tipo_muestreo'] == 'POR_ETAPA':
+                # Seleccionar pallets (25%)
+                selected_pallets = select_stage_sampling_pallets(data['cantidad_pallets'])
+                inspection.selected_pallets = selected_pallets
+                inspection.save()
+                
+                # Calcular tamaño de muestra total según especie
+                resultado_muestreo_base = calcular_muestreo(
+                    tamano_lote=data['tamano_lote'],
+                    especie=data['especie']
+                )
+                
+                # Distribuir muestras proporcionalmente entre pallets seleccionados
+                sample_distribution = distribute_samples_proportionally(
+                    boxes_per_pallet=data['boxes_per_pallet'],
+                    selected_pallet_indices=selected_pallets,
+                    total_sample_size=resultado_muestreo_base['tamano_muestra']
+                )
+                
+                # Generar números aleatorios de cajas
+                cajas_seleccionadas = generate_stage_sampling_numbers(
+                    boxes_per_pallet=data['boxes_per_pallet'],
+                    selected_pallet_indices=selected_pallets,
+                    sample_distribution=sample_distribution
+                )
+                
+                resultado_muestreo = {
+                    'tamano_lote': data['tamano_lote'],
+                    'tipo_tabla': resultado_muestreo_base['tipo_tabla'],
+                    'nombre_tabla': resultado_muestreo_base['nombre_tabla'],
+                    'tamano_muestra': len(cajas_seleccionadas),
+                    'cajas_seleccionadas': cajas_seleccionadas,
+                    'selected_pallets': selected_pallets,
+                    'sample_distribution': sample_distribution
+                }
+            else:
+                # Muestreo normal
+                resultado_muestreo = calcular_muestreo(
+                    tamano_lote=data['tamano_lote'],
+                    especie=data['especie']
+                )
             
             # Guardar resultado del muestreo
             sampling_result = SamplingResult.objects.create(
@@ -147,7 +216,7 @@ class MuestreoViewSet(viewsets.ViewSet):
             )
             
             # Preparar respuesta
-            return Response({
+            response_data = {
                 'success': True,
                 'message': 'Muestreo generado exitosamente',
                 'data': {
@@ -161,7 +230,16 @@ class MuestreoViewSet(viewsets.ViewSet):
                         'cajas_seleccionadas': resultado_muestreo['cajas_seleccionadas']
                     }
                 }
-            }, status=status.HTTP_201_CREATED)
+            }
+            
+            # Agregar datos extra para muestreo por etapa
+            if data['tipo_muestreo'] == 'POR_ETAPA':
+                response_data['data']['stage_sampling'] = {
+                    'selected_pallets': resultado_muestreo.get('selected_pallets', []),
+                    'sample_distribution': resultado_muestreo.get('sample_distribution', {})
+                }
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
             return Response({

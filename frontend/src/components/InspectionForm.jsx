@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
+import StageSamplingPanel from './StageSamplingPanel';
 import './InspectionForm.css';
 
 function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
@@ -22,6 +23,7 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
     tipo_muestreo: 'NORMAL',
     tipo_despacho: '',
     cantidad_pallets: '',
+    boxes_per_pallet: [],
   });
 
   const especies = [
@@ -65,6 +67,13 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
     setError(null);
   };
 
+  const handleBoxesPerPalletChange = (boxes) => {
+    setFormData(prev => ({
+      ...prev,
+      boxes_per_pallet: boxes
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -84,6 +93,32 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
       return;
     }
 
+    // Validaciones específicas para muestreo por etapa
+    if (formData.tipo_muestreo === 'POR_ETAPA') {
+      const totalPallets = parseInt(formData.cantidad_pallets);
+      const totalBoxesLot = parseInt(formData.tamano_lote);
+      
+      // Verificar que se hayan ingresado cajas para todos los pallets
+      const validBoxes = formData.boxes_per_pallet.filter(b => b > 0);
+      if (validBoxes.length !== totalPallets) {
+        setError(`Debe ingresar la cantidad de cajas para todos los ${totalPallets} pallets`);
+        return;
+      }
+      
+      // Verificar que el total coincida con el tamaño del lote
+      const totalEntered = formData.boxes_per_pallet.reduce((sum, val) => sum + val, 0);
+      if (totalEntered !== totalBoxesLot) {
+        setError(`El total de cajas ingresadas (${totalEntered}) debe ser igual al tamaño del lote (${totalBoxesLot})`);
+        return;
+      }
+      
+      // Mínimo 6 pallets
+      if (totalPallets < 6) {
+        setError('El muestreo por etapa requiere al menos 6 pallets');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 
@@ -94,6 +129,13 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
         tamano_lote: parseInt(formData.tamano_lote),
         cantidad_pallets: parseInt(formData.cantidad_pallets),
       };
+
+      // Solo incluir boxes_per_pallet si es muestreo por etapa
+      if (formData.tipo_muestreo === 'POR_ETAPA') {
+        payload.boxes_per_pallet = formData.boxes_per_pallet;
+      } else {
+        delete payload.boxes_per_pallet;
+      }
 
       const response = await apiService.generateSampling(payload);
 
@@ -290,6 +332,16 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
               </select>
             </div>
           </div>
+
+          {/* Panel de configuración para muestreo por etapa */}
+          {formData.tipo_muestreo === 'POR_ETAPA' && formData.cantidad_pallets && formData.tamano_lote && (
+            <StageSamplingPanel
+              totalPallets={parseInt(formData.cantidad_pallets) || 0}
+              totalBoxesLot={parseInt(formData.tamano_lote) || 0}
+              boxesPerPallet={formData.boxes_per_pallet}
+              onBoxesPerPalletChange={handleBoxesPerPalletChange}
+            />
+          )}
         </div>
 
         {error && (
