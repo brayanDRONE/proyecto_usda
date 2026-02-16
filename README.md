@@ -2,6 +2,21 @@
 
 Sistema profesional de gestión de inspecciones y muestreo para establecimientos agrícolas y packing.
 
+---
+
+## 📚 Inicio Rápido - Seleccione su Guía
+
+👉 **Elija la guía según su rol:**
+
+| Rol | Guía | Descripción |
+|-----|------|-------------|
+| 🧑‍💼 **Usuario Final** (Establecimiento) | [GUIA_USUARIO_FINAL.md](GUIA_USUARIO_FINAL.md) | Instalación simple del servicio de impresión |
+| 👨‍💻 **Desarrollador** (Testing local) | [GUIA_INICIO_RAPIDO.md](GUIA_INICIO_RAPIDO.md) | Cómo levantar el sistema localmente |
+| 🏭 **Administrador** (Distribuir servicio) | [GUIA_GENERAR_INSTALADOR.md](GUIA_GENERAR_INSTALADOR.md) | Generar ejecutable para distribución |
+| 🚀 **DevOps** (Deploy producción) | [DEPLOYMENT.md](DEPLOYMENT.md) | Desplegar a Vercel + Railway |
+
+---
+
 ## 🎯 Características
 
 - **Captura de Datos de Inspección**: Formulario completo con validaciones
@@ -326,6 +341,53 @@ Get-Printer | Select-Object Name
 ```
 - Instalar drivers oficiales de Zebra
 - Conectar y encender la impresora antes de iniciar el servicio
+
+---
+
+## 🌐 Arquitectura Multi-Establecimiento (Producción)
+
+Este sistema está diseñado para funcionar como **SaaS multi-tenant**:
+
+```
+┌─────────────────────────────────────────┐
+│  SISTEMA WEB (Vercel + Railway)         │
+│  - Admin central gestiona usuarios      │
+│  - Backend API con PostgreSQL           │
+└──────────────┬──────────────────────────┘
+               │ Internet
+    ┌──────────┴─────────┬────────────┬─────────────
+    │                    │            │
+    ▼                    ▼            ▼
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│ Establ. 1   │  │ Establ. 2   │  │ Establ. N   │
+│ PC + Zebra  │  │ PC + Zebra  │  │ PC + Zebra  │
+│ + Servicio  │  │ + Servicio  │  │ + Servicio  │
+└─────────────┘  └─────────────┘  └─────────────┘
+```
+
+### Para Usuarios Finales
+
+Cada establecimiento necesita:
+1. **PC con Windows** + Internet
+2. **Impresora Zebra** conectada
+3. **Instalador simple**: Ejecutar `INSTALAR.bat` (ver [GUIA_USUARIO_FINAL.md](GUIA_USUARIO_FINAL.md))
+4. **Acceso web**: Navegar a su URL asignada
+
+**No requiere conocimientos técnicos** - El instalador configura todo automáticamente.
+
+### Para Administradores
+
+Distribución del servicio de impresión:
+1. Generar ejecutable con [GUIA_GENERAR_INSTALADOR.md](GUIA_GENERAR_INSTALADOR.md)
+2. Compartir `ZebraServiceInstaller.zip` con cada establecimiento
+3. Los usuarios ejecutan `INSTALAR.bat` → Listo
+
+### Para Desarrolladores
+
+- **Local**: Seguir [GUIA_INICIO_RAPIDO.md](GUIA_INICIO_RAPIDO.md)
+- **Producción**: Seguir [DEPLOYMENT.md](DEPLOYMENT.md)
+
+---
 
 ## 📄 Licencia
 

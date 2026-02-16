@@ -1,0 +1,19 @@
+# Dependencias para desarrollo local (Windows)
+# Instalar con: pip install -r requirements-dev.txt
+
+# Django core
+Django==4.2.9
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+python-decouple==3.8
+djangorestframework-simplejwt==5.3.1
+Pillow==11.0.0
+
+# Dependencias de producción compatibles con Windows
+dj-database-url==2.1.0
+whitenoise==6.6.0
+
+# NOTA: Las siguientes dependencias NO se incluyen en dev porque requieren PostgreSQL/Linux:
+# - gunicorn (solo Linux/Mac)
+# - psycopg2-binary (requiere PostgreSQL instalado)
+# Estas se instalarán automáticamente en Railway/Render desde requirements.txt

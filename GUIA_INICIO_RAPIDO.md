@@ -25,8 +25,10 @@ python -m venv venv
 # Activar entorno virtual
 venv\Scripts\activate
 
-# Instalar dependencias
-pip install -r requirements.txt
+# Instalar dependencias (desarrollo local)
+pip install -r requirements-dev.txt
+# NOTA: Use requirements.txt solo en producción (Railway/Render)
+# requirements-dev.txt omite psycopg2-binary y gunicorn que requieren PostgreSQL/Linux
 
 # Crear base de datos y aplicar migraciones
 python manage.py migrate

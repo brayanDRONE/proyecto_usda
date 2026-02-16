@@ -287,7 +287,6 @@ function SamplingResultView({ result, onNewInspection }) {
       const selectedPrinter = printers[printerIndex];
 
       // Enviar datos de impresión
-      const PRINT_SERVICE_URL = import.meta.env.VITE_PRINT_SERVICE_URL || 'http://localhost:5000';
       const response = await fetch(`${PRINT_SERVICE_URL}/print`, {
         method: 'POST',
         headers: {

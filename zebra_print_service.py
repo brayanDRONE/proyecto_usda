@@ -187,24 +187,52 @@ class ZebraServiceHandler(BaseHTTPRequestHandler):
     """Handler HTTP para el servicio de impresión."""
     
     def do_OPTIONS(self):
-        """Maneja preflight CORS."""
+        """Maneja preflight CORS - Permite acceso desde dominios web."""
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
+        # Permitir acceso desde Vercel y localhost
+        origin = self.headers.get('Origin')
+        allowed_origins = [
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'https://*.vercel.app',  # Cualquier dominio Vercel
+        ]
+        
+        # Si el origen está en la lista o es vercel.app, permitirlo
+        if origin:
+            if any(origin.startswith(allowed.replace('*', '')) or origin == allowed for allowed in allowed_origins):
+                self.send_header('Access-Control-Allow-Origin', origin)
+            elif 'vercel.app' in origin:
+                self.send_header('Access-Control-Allow-Origin', origin)
+            else:
+                self.send_header('Access-Control-Allow-Origin', '*')  # Fallback
+        else:
+            self.send_header('Access-Control-Allow-Origin', '*')
+            
         self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Credentials', 'true')
         self.end_headers()
+    
+    def _set_cors_headers(self):
+        """Configura headers CORS para respuestas."""
+        origin = self.headers.get('Origin')
+        if origin and ('vercel.app' in origin or 'localhost' in origin or '127.0.0.1' in origin):
+            self.send_header('Access-Control-Allow-Origin', origin)
+        else:
+            self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Credentials', 'true')
     
     def do_GET(self):
         """Health check."""
         if self.path == '/health':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            self._set_cors_headers()
             self.end_headers()
             printers = get_available_printers()
             response = {
                 "status": "online",
-                "printers": printers,
+                "printers_available": printers,
                 "zebra_available": any('zebra' in p.lower() or 'zdesigner' in p.lower() for p in printers)
             }
             self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
@@ -233,14 +261,14 @@ class ZebraServiceHandler(BaseHTTPRequestHandler):
                 
                 self.send_response(200 if result['success'] else 400)
                 self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
+                self._set_cors_headers()
                 self.end_headers()
                 self.wfile.write(json.dumps(result, ensure_ascii=False).encode('utf-8'))
                 
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
+                self._set_cors_headers()
                 self.end_headers()
                 error_response = {"success": False, "error": str(e)}
                 self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
