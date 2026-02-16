@@ -24,18 +24,33 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
     tipo_despacho: '',
     cantidad_pallets: '',
     boxes_per_pallet: [],
+    incremento_intensidad: 0,
   });
 
   const especies = [
-    'Uva de Mesa',
+    // Tabla Hipergeométrica (NO permite incremento)
+    'Ciruela',
+    'Damasco 3%',
+    'Damasco 6%',
+    'Durazno',
+    'Nectarino',
+    'Plumcot',
+    // Tabla Biométrica (Permite incremento)
+    'Clementina',
+    'Mandarina', 
+    'Tangerina',
+    'Manzana',
+    'Naranja',
+    'Palta',
+    'Pera',
+    'Pera Asiática',
+    'Pomelo',
+    // Tabla Porcentual (Permite incremento)
     'Arándanos',
     'Cerezas',
-    'Manzanas',
-    'Peras',
-    'Kiwis',
-    'Ciruelas',
-    'Duraznos',
-    'Nectarines',
+    'Uva de Mesa',
+    'Kiwi',
+    'Otras',
   ];
 
   const tiposDespacho = [
@@ -43,6 +58,47 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
     'Pendiente',
     'A Distancia',
   ];
+
+  // Especies por tipo de tabla
+  const especiesHipergeometrica = [
+    'Ciruela', 'Ciruelas',
+    'Damasco', 'Damascos', 'Damasco 3%', 'Damasco 6%',
+    'Durazno', 'Duraznos',
+    'Nectarino', 'Nectarinos',
+    'Plumcot', 'Plumcots'
+  ];
+
+  const especiesBiometrica = [
+    'Clementina', 'Clementinas',
+    'Mandarina', 'Mandarinas',
+    'Tangerina', 'Tangerinas',
+    'Manzana', 'Manzanas',
+    'Naranja', 'Naranjas',
+    'Palta', 'Paltas',
+    'Pera', 'Peras',
+    'Pera Asiática', 'Peras Asiáticas',
+    'Pomelo', 'Pomelos',
+    'Kiwi', 'Kiwis'
+  ];
+
+  /**
+   * Determina si una especie permite incremento de intensidad
+   */
+  const permiteIncrementoIntensidad = (especie) => {
+    if (!especie) return false;
+    
+    const especieNorm = especie.trim().toLowerCase();
+    
+    // Hipergeométrica NO permite incremento
+    const esHipergeometrica = especiesHipergeometrica.some(
+      e => e.toLowerCase() === especieNorm
+    );
+    
+    if (esHipergeometrica) return false;
+    
+    // Biométrica y Porcentual SÍ permiten incremento
+    return true;
+  };
 
   useEffect(() => {
     loadEstablishments();
@@ -60,10 +116,22 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Si cambia la especie, verificar si permite incremento
+    if (name === 'especie') {
+      const permiteIncremento = permiteIncrementoIntensidad(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        incremento_intensidad: permiteIncremento ? prev.incremento_intensidad : 0
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
     setError(null);
   };
 
@@ -330,6 +398,38 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
                   <option key={tipo} value={tipo}>{tipo}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Selector de Incremento de Intensidad */}
+            <div className="form-group">
+              <label htmlFor="incremento_intensidad">
+                Incremento de Intensidad de Muestreo
+                {!permiteIncrementoIntensidad(formData.especie) && formData.especie && (
+                  <span className="label-info"> (No disponible para esta especie)</span>
+                )}
+              </label>
+              <select
+                id="incremento_intensidad"
+                name="incremento_intensidad"
+                value={formData.incremento_intensidad}
+                onChange={handleChange}
+                disabled={!permiteIncrementoIntensidad(formData.especie)}
+                className={!permiteIncrementoIntensidad(formData.especie) ? 'disabled-select' : ''}
+              >
+                <option value={0}>Sin incremento</option>
+                <option value={20}>+20%</option>
+                <option value={40}>+40%</option>
+              </select>
+              {!permiteIncrementoIntensidad(formData.especie) && formData.especie && (
+                <small className="form-help-text warning">
+                  ⚠️ Esta especie usa tabla hipergeométrica y no admite incremento de intensidad
+                </small>
+              )}
+              {permiteIncrementoIntensidad(formData.especie) && formData.incremento_intensidad > 0 && (
+                <small className="form-help-text info">
+                  ℹ️ El tamaño de muestra se incrementará en {formData.incremento_intensidad}%
+                </small>
+              )}
             </div>
           </div>
 

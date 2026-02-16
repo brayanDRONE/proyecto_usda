@@ -103,6 +103,20 @@ class GenerarMuestreoSerializer(serializers.Serializer):
         required=False
     )
     
+    # Parámetro opcional para incremento de intensidad (0, 20, 40)
+    incremento_intensidad = serializers.IntegerField(
+        default=0,
+        required=False,
+        min_value=0,
+        max_value=40
+    )
+    
+    def validate_incremento_intensidad(self, value):
+        """Valida que el incremento sea 0, 20 o 40."""
+        if value not in [0, 20, 40]:
+            raise serializers.ValidationError("El incremento debe ser 0, 20 o 40")
+        return value
+    
     def validate_establishment(self, value):
         """Valida que el establecimiento exista y tenga suscripción activa."""
         try:

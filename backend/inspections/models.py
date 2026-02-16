@@ -229,6 +229,26 @@ class SamplingResult(models.Model):
         default='Hipergeométrica del 6%'
     )
     
+    # Incremento de intensidad de muestreo (opcional)
+    muestra_base = models.IntegerField(
+        verbose_name='Muestra Base',
+        null=True,
+        blank=True,
+        help_text='Tamaño de muestra antes del incremento'
+    )
+    incremento_aplicado = models.IntegerField(
+        verbose_name='Incremento Aplicado (%)',
+        default=0,
+        help_text='Incremento de intensidad: 0, 20 o 40'
+    )
+    muestra_final = models.IntegerField(
+        verbose_name='Muestra Final',
+        null=True,
+        blank=True,
+        help_text='Tamaño de muestra después del incremento'
+    )
+    
+    # Mantener compatibilidad - tamano_muestra apunta a muestra_final
     tamano_muestra = models.IntegerField(verbose_name='Tamaño de la Muestra')
     
     # Resultados (almacenados como JSON en texto)

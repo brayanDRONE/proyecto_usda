@@ -163,6 +163,9 @@ class MuestreoViewSet(viewsets.ViewSet):
                 boxes_per_pallet=data.get('boxes_per_pallet', [])
             )
             
+            # Obtener incremento de intensidad (opcional)
+            incremento_intensidad = data.get('incremento_intensidad', 0)
+            
             # Calcular muestreo según el tipo
             if data['tipo_muestreo'] == 'POR_ETAPA':
                 # Seleccionar pallets (25%)
@@ -179,7 +182,8 @@ class MuestreoViewSet(viewsets.ViewSet):
                 # Calcular tamaño de muestra basado SOLO en pallets seleccionados
                 resultado_muestreo_base = calcular_muestreo(
                     tamano_lote=cajas_en_pallets_seleccionados,
-                    especie=data['especie']
+                    especie=data['especie'],
+                    incremento_intensidad=incremento_intensidad
                 )
                 
                 # Distribuir muestras proporcionalmente entre pallets seleccionados
@@ -201,6 +205,9 @@ class MuestreoViewSet(viewsets.ViewSet):
                     'tamano_lote_muestreado': cajas_en_pallets_seleccionados,  # Cajas realmente muestreadas
                     'tipo_tabla': resultado_muestreo_base['tipo_tabla'],
                     'nombre_tabla': resultado_muestreo_base['nombre_tabla'],
+                    'muestra_base': resultado_muestreo_base['muestra_base'],
+                    'incremento_aplicado': resultado_muestreo_base['incremento_aplicado'],
+                    'muestra_final': resultado_muestreo_base['muestra_final'],
                     'tamano_muestra': len(cajas_seleccionadas),
                     'cajas_seleccionadas': cajas_seleccionadas,
                     'selected_pallets': selected_pallets,
@@ -210,7 +217,8 @@ class MuestreoViewSet(viewsets.ViewSet):
                 # Muestreo normal
                 resultado_muestreo = calcular_muestreo(
                     tamano_lote=data['tamano_lote'],
-                    especie=data['especie']
+                    especie=data['especie'],
+                    incremento_intensidad=incremento_intensidad
                 )
             
             # Guardar resultado del muestreo
@@ -218,6 +226,9 @@ class MuestreoViewSet(viewsets.ViewSet):
                 inspection=inspection,
                 tipo_tabla=resultado_muestreo['tipo_tabla'],
                 nombre_tabla=resultado_muestreo['nombre_tabla'],
+                muestra_base=resultado_muestreo.get('muestra_base'),
+                incremento_aplicado=resultado_muestreo.get('incremento_aplicado', 0),
+                muestra_final=resultado_muestreo.get('muestra_final'),
                 tamano_muestra=resultado_muestreo['tamano_muestra'],
                 cajas_seleccionadas=json.dumps(resultado_muestreo['cajas_seleccionadas'])
             )

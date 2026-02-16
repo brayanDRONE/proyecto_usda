@@ -406,6 +406,11 @@ function SamplingResultView({ result, onNewInspection }) {
               <div className="stat-label">Tamaño de la Muestra</div>
               <div className="stat-value">{sampling_result.tamano_muestra}</div>
               <div className="stat-unit">cajas a inspeccionar</div>
+              {sampling_result.incremento_aplicado > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '0.85em', color: '#059669', fontWeight: 600 }}>
+                  Base: {sampling_result.muestra_base} → Final: {sampling_result.muestra_final}
+                </div>
+              )}
             </div>
           </div>
 

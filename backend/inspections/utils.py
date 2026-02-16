@@ -132,6 +132,23 @@ def obtener_tipo_tabla_muestreo(especie):
         return 'PORCENTUAL'
 
 
+def permite_incremento_intensidad(especie):
+    """
+    Determina si una especie permite incremento de intensidad de muestreo.
+    
+    Solo las especies con tabla BIOMÉTRICA o PORCENTUAL permiten incremento.
+    Las especies con tabla HIPERGEOMÉTRICA NO permiten incremento.
+    
+    Args:
+        especie (str): Nombre de la especie
+    
+    Returns:
+        bool: True si permite incremento, False si no
+    """
+    tipo_tabla = obtener_tipo_tabla_muestreo(especie)
+    return tipo_tabla in ['BIOMETRICA', 'PORCENTUAL']
+
+
 def calcular_tamano_muestra_por_tabla(tamano_lote, tipo_tabla):
     """
     Calcula el tamaño de muestra según la tabla de muestreo SAG-USDA oficial.
@@ -185,7 +202,7 @@ def calcular_tamano_muestra_por_tabla(tamano_lote, tipo_tabla):
         return ultima_muestra, nombre
 
 
-def calcular_muestreo(tamano_lote, especie=None, porcentaje=None):
+def calcular_muestreo(tamano_lote, especie=None, porcentaje=None, incremento_intensidad=0):
     """
     Calcula el muestreo según la especie o porcentaje especificado.
     
@@ -193,56 +210,84 @@ def calcular_muestreo(tamano_lote, especie=None, porcentaje=None):
         tamano_lote (int): Tamaño total del lote
         especie (str, optional): Nombre de la especie para determinar la tabla
         porcentaje (float, optional): Porcentaje de muestreo manual (solo si no se especifica especie)
+        incremento_intensidad (int, optional): Incremento de intensidad (0, 20, 40). Default 0.
     
     Returns:
         dict: Diccionario con:
             - tamano_lote: Tamaño del lote
             - tipo_tabla: Tipo de tabla utilizada
             - nombre_tabla: Nombre descriptivo de la tabla
-            - tamano_muestra: Cantidad de cajas a muestrear
+            - muestra_base: Cantidad base según tabla (antes de incremento)
+            - incremento_aplicado: Porcentaje de incremento aplicado
+            - muestra_final: Cantidad final de cajas a muestrear (después de incremento)
+            - tamano_muestra: Alias de muestra_final (compatibilidad)
             - cajas_seleccionadas: Lista ordenada de números de caja
     """
     if tamano_lote <= 0:
         raise ValueError("El tamaño del lote debe ser mayor a 0")
     
+    # Validar incremento
+    if incremento_intensidad not in [0, 20, 40]:
+        raise ValueError("El incremento debe ser 0, 20 o 40")
+    
     # Determinar el tamaño de muestra según la especie o porcentaje
     if especie:
         tipo_tabla = obtener_tipo_tabla_muestreo(especie)
-        tamano_muestra, nombre_tabla = calcular_tamano_muestra_por_tabla(tamano_lote, tipo_tabla)
+        
+        # Validar que no se aplique incremento a tabla hipergeométrica
+        if incremento_intensidad > 0 and tipo_tabla in ['HIPERGEOMETRICA_3', 'HIPERGEOMETRICA_6']:
+            raise ValueError("No se puede aplicar incremento de intensidad a especies con tabla hipergeométrica")
+        
+        muestra_base, nombre_tabla = calcular_tamano_muestra_por_tabla(tamano_lote, tipo_tabla)
     elif porcentaje:
         if porcentaje <= 0 or porcentaje > 100:
             raise ValueError("El porcentaje debe estar entre 0 y 100")
-        tamano_muestra = math.ceil(tamano_lote * (porcentaje / 100))
+        muestra_base = math.ceil(tamano_lote * (porcentaje / 100))
         tipo_tabla = 'PORCENTUAL'
         nombre_tabla = f'Porcentual {porcentaje}%'
     else:
         # Default: 2%
-        tamano_muestra = math.ceil(tamano_lote * 0.02)
+        muestra_base = math.ceil(tamano_lote * 0.02)
         tipo_tabla = 'PORCENTUAL'
         nombre_tabla = 'Porcentual 2%'
     
     # 🚨 VALIDACIONES CRÍTICAS OFICIALES SAG-USDA 🚨
     
     # Validación 1: NUNCA exceder 49 en tabla Hipergeométrica 6%
-    if tipo_tabla == 'HIPERGEOMETRICA_6' and tamano_muestra > 49:
-        tamano_muestra = 49
+    if tipo_tabla == 'HIPERGEOMETRICA_6' and muestra_base > 49:
+        muestra_base = 49
     
     # Validación 2: NUNCA exceder el tamaño del lote
-    if tamano_muestra > tamano_lote:
-        tamano_muestra = tamano_lote
+    if muestra_base > tamano_lote:
+        muestra_base = tamano_lote
     
     # Validación 3: Asegurar al menos 1 unidad de muestra
-    if tamano_muestra < 1:
-        tamano_muestra = 1
+    if muestra_base < 1:
+        muestra_base = 1
+    
+    # Aplicar incremento de intensidad si corresponde
+    if incremento_intensidad > 0:
+        muestra_final = math.ceil(muestra_base * (1 + incremento_intensidad / 100))
+        # Agregar incremento al nombre de la tabla
+        nombre_tabla = f"{nombre_tabla} +{incremento_intensidad}%"
+    else:
+        muestra_final = muestra_base
+    
+    # Validación final: no exceder tamaño del lote
+    if muestra_final > tamano_lote:
+        muestra_final = tamano_lote
     
     # Generar números aleatorios únicos
-    cajas_seleccionadas = generar_cajas_aleatorias(tamano_lote, tamano_muestra)
+    cajas_seleccionadas = generar_cajas_aleatorias(tamano_lote, muestra_final)
     
     return {
         'tamano_lote': tamano_lote,
         'tipo_tabla': tipo_tabla,
         'nombre_tabla': nombre_tabla,
-        'tamano_muestra': tamano_muestra,
+        'muestra_base': muestra_base,
+        'incremento_aplicado': incremento_intensidad,
+        'muestra_final': muestra_final,
+        'tamano_muestra': muestra_final,  # Compatibilidad
         'cajas_seleccionadas': cajas_seleccionadas
     }
 

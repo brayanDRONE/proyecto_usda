@@ -181,3 +181,33 @@
     padding: 1.5rem;
   }
 }
+/* Estilos para incremento de intensidad */
+.label-info {
+  font-size: 0.8em;
+  color: #6b7280;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.disabled-select {
+  background-color: #f3f4f6 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.form-help-text {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.form-help-text.warning {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.form-help-text.info {
+  color: #0891b2;
+  font-weight: 500;
+}
