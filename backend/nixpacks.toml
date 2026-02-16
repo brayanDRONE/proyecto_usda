@@ -9,7 +9,8 @@ cmds = [
 
 [phases.build]
 cmds = [
-    "python manage.py collectstatic --no-input"
+    "mkdir -p staticfiles",
+    "python manage.py collectstatic --no-input --clear"
 ]
 
 [start]

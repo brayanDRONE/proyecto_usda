@@ -128,12 +128,18 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Whitenoise configuration for production
-# Use StaticFilesStorage instead of CompressedManifestStaticFilesStorage to avoid errors
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# Whitenoise configuration for production (Django 4.2+)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # Media files (Uploads)
 MEDIA_URL = 'media/'
