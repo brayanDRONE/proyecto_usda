@@ -48,6 +48,15 @@ function Login({ onLoginSuccess }) {
 
   return (
     <div className="login-container">
+      {/* Capas de fondo animadas con efecto 3D parallax */}
+      <div className="bg-layer bg-layer-1"></div>
+      <div className="bg-layer bg-layer-2"></div>
+      <div className="bg-layer bg-layer-3"></div>
+      <div className="bg-layer bg-layer-4"></div>
+      <div className="bg-layer bg-layer-5"></div>
+      <div className="bg-layer bg-layer-6"></div>
+      <div className="bg-overlay"></div>
+      
       <div className="login-card">
         <div className="login-header">
           <div className="login-icon">

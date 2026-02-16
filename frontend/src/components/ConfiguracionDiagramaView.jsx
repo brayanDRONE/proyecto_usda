@@ -162,6 +162,23 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
     setConfigurations(newConfigs);
   };
 
+  const applyDistribucionToAll = () => {
+    const firstConfig = configurations[0];
+    if (!firstConfig.base || firstConfig.distribucion_caras.length === 0) {
+      setError('Ingrese la base y configure la distribución de caras del primer pallet');
+      return;
+    }
+
+    const newConfigs = configurations.map(config => ({
+      ...config,
+      distribucion_caras: [...firstConfig.distribucion_caras],
+      distribucion_personalizada: firstConfig.distribucion_personalizada
+    }));
+
+    setConfigurations(newConfigs);
+    setError(null);
+  };
+
   const validateConfigurations = () => {
     for (const config of configurations) {
       if (!config.base || !config.cantidad_cajas) {
@@ -288,6 +305,9 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
           <button className="btn btn-secondary" onClick={applyToAll}>
             📋 Aplicar Primer Pallet a Todos
           </button>
+          <button className="btn btn-secondary" onClick={applyDistribucionToAll}>
+            🔄 Aplicar Distribución de Caras a Todos
+          </button>
           <div className="total-cajas-display">
             Total cajas: <strong>{getTotalCajas()}</strong>
           </div>
@@ -395,7 +415,7 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
                                   onClick={() => agregarCara(index)}
                                   title="Agregar cara"
                                 >
-                                  + Cara
+                                  +
                                 </button>
                                 <button
                                   type="button"
@@ -403,7 +423,7 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
                                   onClick={() => togglePersonalizado(index)}
                                   title="Volver al template"
                                 >
-                                  ↺ Template
+                                  ↺
                                 </button>
                               </div>
                               {!distribucionValida && (

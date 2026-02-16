@@ -46,9 +46,7 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
     'Pera Asiática',
     'Pomelo',
     // Tabla Porcentual (Permite incremento)
-    'Arándanos',
     'Cerezas',
-    'Uva de Mesa',
     'Kiwi',
     'Otras',
   ];

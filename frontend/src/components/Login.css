@@ -1,20 +1,174 @@
+/* 
+ * LOGIN - FONDO ANIMADO PARALLAX 3D
+ * Múltiples capas de imágenes flotando con efecto de profundidad
+ */
+
 .login-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+}
+
+/* Capas de fondo - Base común */
+.bg-layer {
+  position: absolute;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: transform;
+  border-radius: 20px;
+  filter: brightness(1.1) saturate(1.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* Capa 1 - Campo (izquierda completa) */
+.bg-layer-1 {
+  top: -10%;
+  left: -10%;
+  width: 65%;
+  height: 120%;
+  background-image: url('../images/campo.jpg');
+  animation: parallax3d-1 16s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* Capa 2 - Cerezas (derecha arriba extendida) */
+.bg-layer-2 {
+  top: -10%;
+  right: -10%;
+  width: 60%;
+  height: 70%;
+  background-image: url('../images/cereza.jpg');
+  animation: parallax3d-2 18s ease-in-out infinite;
+  animation-delay: -3s;
+  z-index: 3;
+}
+
+/* Capa 3 - Paltas (izquierda centro) */
+.bg-layer-3 {
+  bottom: 10%;
+  left: -5%;
+  width: 50%;
+  height: 60%;
+  background-image: url('../images/paltas.jpg');
+  animation: parallax3d-3 20s ease-in-out infinite;
+  animation-delay: -6s;
+  z-index: 2;
+}
+
+/* Capa 4 - Durazno (derecha abajo extendida) */
+.bg-layer-4 {
+  bottom: -10%;
+  right: -10%;
+  width: 65%;
+  height: 75%;
+  background-image: url('../images/durazno.jpg');
+  animation: parallax3d-4 17s ease-in-out infinite;
+  animation-delay: -9s;
+  z-index: 1;
+}
+
+/* Capa 5 - Ciruela (centro arriba) */
+.bg-layer-5 {
+  top: -5%;
+  left: 25%;
+  right: 25%;
+  width: 50%;
+  height: 55%;
+  background-image: url('../images/ciruela.jpg');
+  animation: parallax3d-5 19s ease-in-out infinite;
+  animation-delay: -12s;
+  z-index: 2;
+}
+
+/* Capa 6 - Cereza2 (centro abajo) */
+.bg-layer-6 {
+  bottom: -5%;
+  left: 20%;
+  right: 20%;
+  width: 60%;
+  height: 65%;
+  background-image: url('../images/cereza2.jpg');
+  animation: parallax3d-6 21s ease-in-out infinite;
+  animation-delay: -15s;
+  z-index: 3;
+}
+
+/* Overlay con vignette suave para profundidad */
+.bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0) 20%,
+      rgba(0, 0, 0, 0.1) 45%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Animaciones parallax 3D - Cada capa con movimiento único */
+@keyframes parallax3d-1 {
+  0% { transform: scale(1) translateY(0px) translateX(0px); }
+  50% { transform: scale(1.04) translateY(-8px) translateX(6px); }
+  100% { transform: scale(1) translateY(0px) translateX(0px); }
+}
+
+@keyframes parallax3d-2 {
+  0% { transform: scale(1) translateY(0px) translateX(0px) rotate(0deg); }
+  50% { transform: scale(1.03) translateY(8px) translateX(-5px) rotate(0.5deg); }
+  100% { transform: scale(1) translateY(0px) translateX(0px) rotate(0deg); }
+}
+
+@keyframes parallax3d-3 {
+  0% { transform: scale(1) translateY(0px) translateX(0px); }
+  50% { transform: scale(1.04) translateY(-6px) translateX(-8px); }
+  100% { transform: scale(1) translateY(0px) translateX(0px); }
+}
+
+@keyframes parallax3d-4 {
+  0% { transform: scale(1) translateY(0px) translateX(0px) rotate(0deg); }
+  50% { transform: scale(1.03) translateY(10px) translateX(4px) rotate(-0.5deg); }
+  100% { transform: scale(1) translateY(0px) translateX(0px) rotate(0deg); }
+}
+
+@keyframes parallax3d-5 {
+  0% { transform: scale(1) translateY(0px) translateX(0px); }
+  50% { transform: scale(1.03) translateY(-7px) translateX(5px); }
+  100% { transform: scale(1) translateY(0px) translateX(0px); }
+}
+
+@keyframes parallax3d-6 {
+  0% { transform: scale(1) translateY(0px) translateX(0px) rotate(0deg); }
+  50% { transform: scale(1.04) translateY(9px) translateX(-6px) rotate(0.3deg); }
+  100% { transform: scale(1) translateY(0px) translateX(0px) rotate(0deg); }
 }
 
 .login-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 16px;
+  box-shadow: 
+    0 25px 70px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
   width: 100%;
   max-width: 420px;
   padding: 40px;
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.5s ease-out;
+  position: relative;
+  z-index: 10;
 }
 
 @keyframes slideUp {
@@ -193,5 +347,76 @@
   .login-icon {
     width: 64px;
     height: 64px;
+  }
+
+  /* Ajustar capas de fondo para móviles - cobertura completa */
+  .bg-layer-1 {
+    width: 100%;
+    height: 80%;
+    left: -20%;
+  }
+
+  .bg-layer-2 {
+    width: 85%;
+    height: 65%;
+    top: -5%;
+    right: -15%;
+  }
+
+  .bg-layer-3 {
+    width: 75%;
+    height: 55%;
+    left: -10%;
+  }
+
+  .bg-layer-4 {
+    width: 90%;
+    height: 70%;
+    right: -15%;
+  }
+
+  .bg-layer-5 {
+    width: 70%;
+    height: 50%;
+    left: 15%;
+  }
+
+  .bg-layer-6 {
+    width: 80%;
+    height: 60%;
+    left: 10%;
+  }
+}
+
+/* Tablet y pantallas medianas */
+@media (min-width: 481px) and (max-width: 768px) {
+  .bg-layer-1 {
+    width: 70%;
+    height: 100%;
+  }
+
+  .bg-layer-2 {
+    width: 65%;
+    height: 65%;
+  }
+
+  .bg-layer-3 {
+    width: 55%;
+    height: 58%;
+  }
+
+  .bg-layer-4 {
+    width: 70%;
+    height: 72%;
+  }
+
+  .bg-layer-5 {
+    width: 55%;
+    height: 52%;
+  }
+
+  .bg-layer-6 {
+    width: 65%;
+    height: 62%;
   }
 }
