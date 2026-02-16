@@ -245,7 +245,8 @@ function SamplingResultView({ result, onNewInspection }) {
 
     try {
       // Verificar que el servicio esté disponible y obtener impresoras
-      const healthResponse = await fetch('http://localhost:5000/health');
+      const PRINT_SERVICE_URL = import.meta.env.VITE_PRINT_SERVICE_URL || 'http://localhost:5000';
+      const healthResponse = await fetch(`${PRINT_SERVICE_URL}/health`);
       if (!healthResponse.ok) {
         throw new Error('Servicio de impresión no disponible');
       }
@@ -286,7 +287,8 @@ function SamplingResultView({ result, onNewInspection }) {
       const selectedPrinter = printers[printerIndex];
 
       // Enviar datos de impresión
-      const response = await fetch('http://localhost:5000/print', {
+      const PRINT_SERVICE_URL = import.meta.env.VITE_PRINT_SERVICE_URL || 'http://localhost:5000';
+      const response = await fetch(`${PRINT_SERVICE_URL}/print`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

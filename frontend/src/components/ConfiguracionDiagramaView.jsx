@@ -223,8 +223,9 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
         }))
       };
 
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       const response = await fetch(
-        `http://localhost:8000/api/muestreo/configurar-pallets/${inspection.id}/`,
+        `${API_URL}/muestreo/configurar-pallets/${inspection.id}/`,
         {
           method: 'POST',
           headers: {

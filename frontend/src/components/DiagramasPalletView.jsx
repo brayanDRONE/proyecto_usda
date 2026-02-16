@@ -28,8 +28,9 @@ function DiagramasPalletView({ inspection, onClose }) {
       setError(null);
 
       const token = localStorage.getItem('access_token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       const response = await fetch(
-        `http://localhost:8000/api/muestreo/diagrama-pallets/${inspection.id}/`,
+        `${API_URL}/muestreo/diagrama-pallets/${inspection.id}/`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
