@@ -35,8 +35,8 @@ class InspectionSerializer(serializers.ModelSerializer):
             'id', 'exportador', 'establishment', 'establishment_name',
             'inspector_sag', 'contraparte_sag', 'fecha', 'hora',
             'especie', 'numero_lote', 'tamano_lote', 'tipo_muestreo',
-            'tipo_despacho', 'cantidad_pallets', 'boxes_per_pallet', 
-            'selected_pallets', 'created_at'
+            'tipo_despacho', 'cantidad_pallets', 'pallet_configurations',
+            'boxes_per_pallet', 'selected_pallets', 'created_at'
         ]
         read_only_fields = ['id', 'created_at', 'fecha', 'hora', 'selected_pallets']
     

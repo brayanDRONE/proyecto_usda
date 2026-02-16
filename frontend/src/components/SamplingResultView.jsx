@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import DiagramasPalletView from './DiagramasPalletView';
 import './SamplingResultView.css';
 import usdaLogo from '../images/usda.svg';
 import chileLogoImg from '../images/logo_chile.png';
@@ -15,6 +16,7 @@ function SamplingResultView({ result, onNewInspection }) {
   const { inspection, sampling_result } = result;
   const [printingZebra, setPrintingZebra] = useState(false);
   const [zebraError, setZebraError] = useState(null);
+  const [showDiagrams, setShowDiagrams] = useState(false);
 
   const generatePDF = async () => {
     const doc = new jsPDF();
@@ -418,10 +420,16 @@ function SamplingResultView({ result, onNewInspection }) {
                   <strong>Muestreo por Etapa:</strong> Se seleccionaron {result.stage_sampling.selected_pallets.length} pallets 
                   ({Math.round((result.stage_sampling.selected_pallets.length / inspection.cantidad_pallets) * 100)}% del total)
                   <div style={{ marginTop: '8px' }}>
-                    <strong>Pallets Seleccionados:</strong> {result.stage_sampling.selected_pallets.map(p => p + 1).join(', ')}
+                    <strong>Pallets Seleccionados:</strong> {result.stage_sampling.selected_pallets.join(', ')}
                   </div>
+                  {sampling_result.tamano_lote_muestreado && (
+                    <div style={{ marginTop: '4px', fontSize: '0.95em', color: '#059669', fontWeight: 600 }}>
+                      Cajas en pallets seleccionados: {sampling_result.tamano_lote_muestreado} 
+                      (de {sampling_result.tamano_lote} totales)
+                    </div>
+                  )}
                   <div style={{ marginTop: '4px', fontSize: '0.9em', opacity: '0.9' }}>
-                    Total de pallets: {inspection.cantidad_pallets}
+                    Total de pallets en el lote: {inspection.cantidad_pallets}
                   </div>
                 </div>
               </div>
@@ -465,7 +473,11 @@ function SamplingResultView({ result, onNewInspection }) {
               {printingZebra ? 'Imprimiendo...' : 'Etiquetas Zebra'}
             </button>
 
-            <button className="btn btn-secondary" disabled>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setShowDiagrams(true)}
+              title="Configurar y ver diagramas de pallets"
+            >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
               </svg>
@@ -484,6 +496,14 @@ function SamplingResultView({ result, onNewInspection }) {
           </div>
         </div>
       </div>
+
+      {/* Modal de diagramas */}
+      {showDiagrams && (
+        <DiagramasPalletView
+          inspection={inspection}
+          onClose={() => setShowDiagrams(false)}
+        />
+      )}
     </div>
   );
 }

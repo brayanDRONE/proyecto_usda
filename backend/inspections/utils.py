@@ -447,32 +447,36 @@ def generate_stage_sampling_numbers(boxes_per_pallet, selected_pallet_indices, s
     """
     Genera números aleatorios de cajas para muestreo por etapa.
     
+    IMPORTANTE: En muestreo por etapa, la numeración es CONTINUA para los pallets seleccionados.
+    Ejemplo: Si seleccionas pallets 3, 5 y 7 con 120 cajas cada uno:
+    - Pallet 3 → Cajas 1-120
+    - Pallet 5 → Cajas 121-240
+    - Pallet 7 → Cajas 241-360
+    
     Args:
         boxes_per_pallet (list): Cajas en cada pallet (1-based indexing)
         selected_pallet_indices (list): Índices de pallets seleccionados (1-based)
         sample_distribution (dict): Cantidad de cajas a muestrear por pallet
     
     Returns:
-        list: Números de caja seleccionados (ordenados)
+        list: Números de caja seleccionados (ordenados, numeración continua)
     """
     selected_boxes = []
-    offset = 0
+    offset = 0  # Offset continuo solo para pallets seleccionados
     
-    for pallet_idx in range(1, len(boxes_per_pallet) + 1):
+    for pallet_idx in sorted(selected_pallet_indices):
         cajas_en_pallet = boxes_per_pallet[pallet_idx - 1]
+        cajas_a_muestrear = sample_distribution.get(pallet_idx, 0)
         
-        # Si este pallet está seleccionado para muestreo
-        if pallet_idx in selected_pallet_indices:
-            cajas_a_muestrear = sample_distribution.get(pallet_idx, 0)
-            
-            if cajas_a_muestrear > 0:
-                # Generar números aleatorios dentro del rango del pallet
-                numeros_pallet = random.sample(
-                    range(offset + 1, offset + cajas_en_pallet + 1),
-                    min(cajas_a_muestrear, cajas_en_pallet)
-                )
-                selected_boxes.extend(numeros_pallet)
+        if cajas_a_muestrear > 0:
+            # Generar números aleatorios dentro del rango continuo del pallet
+            numeros_pallet = random.sample(
+                range(offset + 1, offset + cajas_en_pallet + 1),
+                min(cajas_a_muestrear, cajas_en_pallet)
+            )
+            selected_boxes.extend(numeros_pallet)
         
+        # Incrementar offset solo para pallets seleccionados
         offset += cajas_en_pallet
     
     selected_boxes.sort()

@@ -170,9 +170,15 @@ class MuestreoViewSet(viewsets.ViewSet):
                 inspection.selected_pallets = selected_pallets
                 inspection.save()
                 
-                # Calcular tamaño de muestra total según especie
+                # Calcular cajas totales SOLO de pallets seleccionados
+                cajas_en_pallets_seleccionados = sum(
+                    data['boxes_per_pallet'][i - 1] 
+                    for i in selected_pallets
+                )
+                
+                # Calcular tamaño de muestra basado SOLO en pallets seleccionados
                 resultado_muestreo_base = calcular_muestreo(
-                    tamano_lote=data['tamano_lote'],
+                    tamano_lote=cajas_en_pallets_seleccionados,
                     especie=data['especie']
                 )
                 
@@ -191,7 +197,8 @@ class MuestreoViewSet(viewsets.ViewSet):
                 )
                 
                 resultado_muestreo = {
-                    'tamano_lote': data['tamano_lote'],
+                    'tamano_lote': data['tamano_lote'],  # Mantener el lote original para referencia
+                    'tamano_lote_muestreado': cajas_en_pallets_seleccionados,  # Cajas realmente muestreadas
                     'tipo_tabla': resultado_muestreo_base['tipo_tabla'],
                     'nombre_tabla': resultado_muestreo_base['nombre_tabla'],
                     'tamano_muestra': len(cajas_seleccionadas),
@@ -234,6 +241,7 @@ class MuestreoViewSet(viewsets.ViewSet):
             
             # Agregar datos extra para muestreo por etapa
             if data['tipo_muestreo'] == 'POR_ETAPA':
+                response_data['data']['sampling_result']['tamano_lote_muestreado'] = resultado_muestreo.get('tamano_lote_muestreado', resultado_muestreo['tamano_lote'])
                 response_data['data']['stage_sampling'] = {
                     'selected_pallets': resultado_muestreo.get('selected_pallets', []),
                     'sample_distribution': resultado_muestreo.get('sample_distribution', {})
@@ -245,6 +253,253 @@ class MuestreoViewSet(viewsets.ViewSet):
             return Response({
                 'success': False,
                 'message': 'Error al generar el muestreo',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='configurar-pallets/(?P<inspection_id>[^/.]+)')
+    def configurar_pallets(self, request, inspection_id=None):
+        """
+        Endpoint: POST /api/muestreo/configurar-pallets/<inspection_id>/
+        
+        Guarda la configuración de base y altura para cada pallet.
+        
+        Request Body:
+        {
+        Body:
+        {
+            "configurations": [
+                {"numero_pallet": 1, "base": 8, "cantidad_cajas": 120},
+                {"numero_pallet": 2, "base": 6, "cantidad_cajas": 28},
+                ...
+            ]
+        }
+        
+        Response:
+        {
+            "success": true,
+            "message": "Configuraciones guardadas exitosamente"
+        }
+        """
+        try:
+            inspection = get_object_or_404(Inspection, id=inspection_id)
+            
+            configurations = request.data.get('configurations', [])
+            
+            if not configurations:
+                return Response({
+                    'success': False,
+                    'message': 'Debe proporcionar configuraciones de pallets'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validar que el número de configuraciones coincida con cantidad de pallets
+            pallets_a_configurar = set()
+            if inspection.tipo_muestreo == 'POR_ETAPA':
+                # Solo pallets seleccionados
+                pallets_a_configurar = set(inspection.selected_pallets)
+            else:
+                # Todos los pallets
+                pallets_a_configurar = set(range(1, inspection.cantidad_pallets + 1))
+            
+            config_pallets = set(c.get('numero_pallet') for c in configurations)
+            
+            if config_pallets != pallets_a_configurar:
+                return Response({
+                    'success': False,
+                    'message': f'Las configuraciones deben incluir exactamente los pallets: {sorted(pallets_a_configurar)}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validar y procesar cada configuración
+            import math
+            processed_configs = []
+            for config in configurations:
+                if 'numero_pallet' not in config or 'base' not in config or 'cantidad_cajas' not in config:
+                    return Response({
+                        'success': False,
+                        'message': 'Cada configuración debe tener numero_pallet, base y cantidad_cajas'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                base = config['base']
+                cantidad_cajas = config['cantidad_cajas']
+                
+                if base < 1 or cantidad_cajas < 1:
+                    return Response({
+                        'success': False,
+                        'message': 'Base y cantidad de cajas deben ser mayores a 0'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Calcular altura (capas) basándose en base y cantidad de cajas
+                altura = math.ceil(cantidad_cajas / base)
+                
+                processed_configs.append({
+                    'numero_pallet': config['numero_pallet'],
+                    'base': base,
+                    'cantidad_cajas': cantidad_cajas,
+                    'altura': altura
+                })
+            
+            # Guardar configuraciones procesadas
+            inspection.pallet_configurations = processed_configs
+            inspection.save()
+            
+            return Response({
+                'success': True,
+                'message': 'Configuraciones guardadas exitosamente',
+                'data': {
+                    'configurations': processed_configs
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error al guardar configuraciones',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'], url_path='diagrama-pallets/(?P<inspection_id>[^/.]+)')
+    def get_diagrama_pallets(self, request, inspection_id=None):
+        """
+        Endpoint: GET /api/muestreo/diagrama-pallets/<inspection_id>/
+        
+        Retorna los datos necesarios para generar los diagramas de pallets.
+        
+        Response:
+        {
+            "success": true,
+            "data": {
+                "inspection": {...},
+                "base_pallet": int,
+                "altura_pallet": int,
+                "cajas_por_pallet": int,
+                "pallets": [
+                    {
+                        "numero_pallet": int,
+                        "inicio_caja": int,
+                        "fin_caja": int,
+                        "cajas": [
+                            {"numero": int, "capa": int, "seleccionada": bool},
+                            ...
+                        ],
+                        "cajas_muestra": [int, int, ...]
+                    },
+                    ...
+                ]
+            }
+        }
+        """
+        try:
+            # Obtener inspección
+            inspection = get_object_or_404(Inspection, id=inspection_id)
+            
+            # Verificar que tenga sampling_result
+            if not hasattr(inspection, 'sampling_result'):
+                return Response({
+                    'success': False,
+                    'message': 'La inspección no tiene resultados de muestreo'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            sampling_result = inspection.sampling_result
+            
+            # Verificar que tenga configuraciones de pallets
+            if not inspection.pallet_configurations:
+                return Response({
+                    'success': False,
+                    'message': 'Configuración de pallets requerida',
+                    'requires_configuration': True
+                }, status=status.HTTP_200_OK)
+            
+            # Obtener lista de cajas muestra
+            cajas_seleccionadas = json.loads(sampling_result.cajas_seleccionadas)
+            cajas_muestra_set = set(cajas_seleccionadas)
+            
+            # Convertir configuraciones a dict para acceso rápido
+            config_dict = {c['numero_pallet']: c for c in inspection.pallet_configurations}
+            
+            # Determinar qué pallets mostrar
+            if inspection.tipo_muestreo == 'POR_ETAPA':
+                # Solo pallets seleccionados
+                pallets_a_mostrar = inspection.selected_pallets
+            else:
+                # Todos los pallets (o los que tengan configuración)
+                pallets_a_mostrar = [c['numero_pallet'] for c in inspection.pallet_configurations]
+            
+            # Generar datos para cada pallet
+            pallets_data = []
+            for num_pallet in sorted(pallets_a_mostrar):
+                # Obtener configuración de este pallet
+                if num_pallet not in config_dict:
+                    continue
+                
+                config = config_dict[num_pallet]
+                base = config['base']
+                altura = config['altura']
+                cantidad_cajas = config['cantidad_cajas']
+                
+                # Calcular rango de cajas de este pallet usando cantidad_cajas
+                # Para POR_ETAPA: solo considerar pallets seleccionados anteriores
+                # Para NORMAL: considerar todos los pallets anteriores
+                inicio_caja = 1
+                
+                if inspection.tipo_muestreo == 'POR_ETAPA':
+                    # Solo sumar cajas de pallets seleccionados anteriores
+                    for pallet_anterior in sorted(pallets_a_mostrar):
+                        if pallet_anterior >= num_pallet:
+                            break
+                        if pallet_anterior in config_dict:
+                            inicio_caja += config_dict[pallet_anterior]['cantidad_cajas']
+                else:
+                    # Sumar cajas de todos los pallets anteriores
+                    for i in range(1, num_pallet):
+                        if i in config_dict:
+                            inicio_caja += config_dict[i]['cantidad_cajas']
+                
+                fin_caja = inicio_caja + cantidad_cajas - 1
+                
+                # Filtrar cajas muestra de este pallet
+                cajas_muestra_pallet = [c for c in cajas_seleccionadas if inicio_caja <= c <= fin_caja]
+                
+                # Generar estructura de cajas con su información
+                cajas = []
+                for num_caja_global in range(inicio_caja, fin_caja + 1):
+                    # Número de caja dentro del pallet (1-based)
+                    num_caja_local = num_caja_global - inicio_caja + 1
+                    
+                    # Calcular capa (1-based)
+                    import math
+                    capa = math.ceil(num_caja_local / base)
+                    
+                    cajas.append({
+                        'numero': num_caja_global,
+                        'numero_local': num_caja_local,
+                        'capa': capa,
+                        'seleccionada': num_caja_global in cajas_muestra_set
+                    })
+                
+                pallets_data.append({
+                    'numero_pallet': num_pallet,
+                    'base': base,
+                    'altura': altura,
+                    'cantidad_cajas': cantidad_cajas,
+                    'inicio_caja': inicio_caja,
+                    'fin_caja': fin_caja,
+                    'cajas': cajas,
+                    'cajas_muestra': cajas_muestra_pallet,
+                    'total_cajas_muestra': len(cajas_muestra_pallet)
+                })
+            
+            return Response({
+                'success': True,
+                'data': {
+                    'inspection': InspectionSerializer(inspection).data,
+                    'total_pallets_mostrados': len(pallets_data),
+                    'pallets': pallets_data
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error al obtener diagrama de pallets',
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

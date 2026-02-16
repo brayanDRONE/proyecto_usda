@@ -158,6 +158,14 @@ class Inspection(models.Model):
         verbose_name='Cantidad de Pallets'
     )
     
+    # Configuración de pallets para diagramas (por pallet individual)
+    pallet_configurations = JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Configuraciones de Pallets',
+        help_text='Array con configuración de cada pallet: [{numero_pallet, base, altura}, ...]'
+    )
+    
     # Muestreo por etapa - Cajas por pallet
     boxes_per_pallet = JSONField(
         default=list,
