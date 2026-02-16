@@ -265,11 +265,9 @@ class MuestreoViewSet(viewsets.ViewSet):
         
         Request Body:
         {
-        Body:
-        {
             "configurations": [
-                {"numero_pallet": 1, "base": 8, "cantidad_cajas": 120},
-                {"numero_pallet": 2, "base": 6, "cantidad_cajas": 28},
+                {"numero_pallet": 1, "base": 8, "cantidad_cajas": 120, "distribucion_caras": [4, 4]},
+                {"numero_pallet": 2, "base": 6, "cantidad_cajas": 28, "distribucion_caras": [3, 3]},
                 ...
             ]
         }
@@ -320,12 +318,22 @@ class MuestreoViewSet(viewsets.ViewSet):
                 
                 base = config['base']
                 cantidad_cajas = config['cantidad_cajas']
+                distribucion_caras = config.get('distribucion_caras', [])
                 
                 if base < 1 or cantidad_cajas < 1:
                     return Response({
                         'success': False,
                         'message': 'Base y cantidad de cajas deben ser mayores a 0'
                     }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Validar distribución de caras si se proporciona
+                if distribucion_caras:
+                    suma_caras = sum(distribucion_caras)
+                    if suma_caras != base:
+                        return Response({
+                            'success': False,
+                            'message': f'La suma de la distribución de caras ({suma_caras}) debe coincidir con la base ({base}) en el pallet {config["numero_pallet"]}'
+                        }, status=status.HTTP_400_BAD_REQUEST)
                 
                 # Calcular altura (capas) basándose en base y cantidad de cajas
                 altura = math.ceil(cantidad_cajas / base)
@@ -334,7 +342,8 @@ class MuestreoViewSet(viewsets.ViewSet):
                     'numero_pallet': config['numero_pallet'],
                     'base': base,
                     'cantidad_cajas': cantidad_cajas,
-                    'altura': altura
+                    'altura': altura,
+                    'distribucion_caras': distribucion_caras
                 })
             
             # Guardar configuraciones procesadas
@@ -434,6 +443,7 @@ class MuestreoViewSet(viewsets.ViewSet):
                 base = config['base']
                 altura = config['altura']
                 cantidad_cajas = config['cantidad_cajas']
+                distribucion_caras = config.get('distribucion_caras', [])
                 
                 # Calcular rango de cajas de este pallet usando cantidad_cajas
                 # Para POR_ETAPA: solo considerar pallets seleccionados anteriores
@@ -480,6 +490,7 @@ class MuestreoViewSet(viewsets.ViewSet):
                     'base': base,
                     'altura': altura,
                     'cantidad_cajas': cantidad_cajas,
+                    'distribucion_caras': distribucion_caras,
                     'inicio_caja': inicio_caja,
                     'fin_caja': fin_caja,
                     'cajas': cajas,

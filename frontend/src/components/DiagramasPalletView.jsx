@@ -113,7 +113,7 @@ function DiagramasPalletView({ inspection, onClose }) {
   };
 
   const drawPalletOnPDF = (doc, pallet, inspData, pageWidth, startY, maxHeight, isFirst) => {
-    const { base, altura, cantidad_cajas } = pallet;
+    const { base, altura, cantidad_cajas, distribucion_caras = [] } = pallet;
 
     // Encabezado del pallet
     doc.setFontSize(12);
@@ -133,25 +133,96 @@ function DiagramasPalletView({ inspection, onClose }) {
     doc.text(`Cajas: ${pallet.inicio_caja} - ${pallet.fin_caja} | Muestra: ${pallet.total_cajas_muestra}`, 15, yPos);
     yPos += 8;
 
+    // Configuración de separadores entre caras
+    const separatorWidth = distribucion_caras.length > 1 ? 3 : 0; // 3mm de separador
+    const numSeparators = Math.max(0, distribucion_caras.length - 1);
+    const totalSeparatorWidth = numSeparators * separatorWidth;
+
     // Calcular tamaño de celda para que quepa en el espacio disponible
     const availableHeight = maxHeight - (yPos - startY) - 20;
     const cellSize = Math.min(
-      (pageWidth - 30) / base,
+      (pageWidth - 30 - totalSeparatorWidth) / base,
       availableHeight / altura,
       8  // Máximo 8mm por celda
     );
 
-    const gridWidth = base * cellSize;
+    const gridWidth = base * cellSize + totalSeparatorWidth;
     const gridHeight = altura * cellSize;
     const startX = (pageWidth - gridWidth) / 2;
+
+    // Función auxiliar para obtener info de cara y calcular X con separadores
+    const getCaraXPosition = (col) => {
+      if (distribucion_caras.length === 0) {
+        return startX + ((col - 1) * cellSize);
+      }
+
+      let acumulado = 0;
+      let xOffset = 0;
+      let caraIndex = 0;
+
+      for (let i = 0; i < distribucion_caras.length; i++) {
+        const colsEnCara = distribucion_caras[i];
+        if (col <= acumulado + colsEnCara) {
+          // Está en esta cara
+          const colEnCara = col - acumulado;
+          return startX + xOffset + ((colEnCara - 1) * cellSize);
+        }
+        acumulado += colsEnCara;
+        xOffset += colsEnCara * cellSize + separatorWidth;
+        caraIndex = i + 1;
+      }
+
+      // Fallback
+      return startX + ((col - 1) * cellSize);
+    };
+
+    // Dibujar etiquetas de caras si hay distribución
+    if (distribucion_caras.length > 1) {
+      yPos += 3;
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(107, 114, 128);
+      
+      let xOffset = startX;
+      distribucion_caras.forEach((cols, index) => {
+        const caraWidth = cols * cellSize;
+        const caraLabel = `Cara ${String.fromCharCode(65 + index)}`;
+        doc.text(caraLabel, xOffset + caraWidth / 2, yPos, { align: 'center' });
+        xOffset += caraWidth + separatorWidth;
+      });
+      
+      yPos += 4;
+    }
+
+    // Dibujar separadores verticales entre caras
+    if (distribucion_caras.length > 1) {
+      let xOffset = startX;
+      
+      for (let i = 0; i < distribucion_caras.length - 1; i++) {
+        xOffset += distribucion_caras[i] * cellSize;
+        
+        // Dibujar separador con patrón punteado
+        doc.setDrawColor(147, 51, 234); // Púrpura
+        doc.setLineWidth(0.8);
+        
+        // Línea punteada vertical
+        const sepX = xOffset + separatorWidth / 2;
+        const dashLength = 2;
+        for (let y = yPos; y < yPos + gridHeight; y += dashLength * 2) {
+          doc.line(sepX, y, sepX, Math.min(y + dashLength, yPos + gridHeight));
+        }
+        
+        xOffset += separatorWidth;
+      }
+    }
 
     // Dibujar cada caja (invertido: caja 1 abajo)
     pallet.cajas.forEach((caja) => {
       const rowFromTop = Math.ceil(caja.numero_local / base);
       const rowFromBottom = altura - rowFromTop + 1;
-      const col = ((caja.numero_local - 1) % base);
+      const col = ((caja.numero_local - 1) % base) + 1; // 1-based
       
-      const x = startX + (col * cellSize);
+      const x = getCaraXPosition(col);
       const y = yPos + (rowFromBottom - 1) * cellSize;
 
       // Color según si es muestra o no
@@ -197,15 +268,17 @@ function DiagramasPalletView({ inspection, onClose }) {
     doc.rect(45, legendY, 5, 5, 'FD');
     doc.text('Muestra', 52, legendY + 4);
 
-    // Info adicional
+    // Info adicional con distribución de caras
     doc.setFontSize(6);
     doc.setTextColor(107, 114, 128);
-    doc.text(
-      `Base: ${base} | Capas: ${altura} | Total: ${cantidad_cajas}`,
-      pageWidth / 2,
-      legendY + 4,
-      { align: 'center' }
-    );
+    let infoText = `Base: ${base} | Capas: ${altura} | Total: ${cantidad_cajas}`;
+    if (distribucion_caras.length > 1) {
+      const distText = distribucion_caras.map((cols, i) => 
+        `${String.fromCharCode(65 + i)}:${cols}`
+      ).join(' + ');
+      infoText += ` | Caras: ${distText}`;
+    }
+    doc.text(infoText, pageWidth / 2, legendY + 4, { align: 'center' });
   };
 
   if (loading) {
@@ -305,6 +378,7 @@ function DiagramasPalletView({ inspection, onClose }) {
               palletData={pallet}
               basePallet={pallet.base}
               alturaPallet={pallet.altura}
+              distribucionCaras={pallet.distribucion_caras || []}
             />
           ))}
         </div>

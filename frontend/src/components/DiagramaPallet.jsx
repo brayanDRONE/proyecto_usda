@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import './DiagramaPallet.css';
 
-function DiagramaPallet({ palletData, basePallet, alturaPallet }) {
+function DiagramaPallet({ palletData, basePallet, alturaPallet, distribucionCaras = [] }) {
   const [selectedBox, setSelectedBox] = useState(null);
 
   const handleBoxClick = (caja) => {
@@ -17,6 +17,83 @@ function DiagramaPallet({ palletData, basePallet, alturaPallet }) {
 
   const handleCloseTooltip = () => {
     setSelectedBox(null);
+  };
+
+  /**
+   * Calcula en qué cara está una columna y su posición dentro de esa cara
+   */
+  const getCaraInfo = (col) => {
+    if (distribucionCaras.length === 0) {
+      return { caraIndex: 0, colEnCara: col, offsetCols: 0 };
+    }
+
+    let acumulado = 0;
+    let offsetCols = 0; // Cantidad de columnas separadoras antes de esta
+
+    for (let i = 0; i < distribucionCaras.length; i++) {
+      const colsEnCara = distribucionCaras[i];
+      if (col <= acumulado + colsEnCara) {
+        return {
+          caraIndex: i,
+          colEnCara: col - acumulado,
+          offsetCols: i // Cada cara tiene un separador antes (excepto la primera)
+        };
+      }
+      acumulado += colsEnCara;
+    }
+
+    return { caraIndex: 0, colEnCara: col, offsetCols: 0 };
+  };
+
+  /**
+   * Genera el template de columnas para CSS Grid incluyendo separadores
+   */
+  const getGridTemplateColumns = () => {
+    if (distribucionCaras.length <= 1) {
+      return `repeat(${basePallet}, 1fr)`;
+    }
+
+    // Generar template con separadores entre caras
+    const parts = [];
+    distribucionCaras.forEach((cols, index) => {
+      if (index > 0) {
+        parts.push('8px'); // Separador de 8px
+      }
+      parts.push(`repeat(${cols}, 1fr)`);
+    });
+
+    return parts.join(' ');
+  };
+
+  /**
+   * Renderiza las etiquetas de caras si hay distribución
+   */
+  const renderCaraLabels = () => {
+    if (distribucionCaras.length <= 1) return null;
+
+    let startCol = 1;
+    const labels = [];
+
+    distribucionCaras.forEach((cols, index) => {
+      const endCol = startCol + cols - 1 + index; // +index por los separadores
+
+      labels.push(
+        <div
+          key={index}
+          className="cara-label-overlay"
+          style={{
+            gridColumn: `${startCol} / ${endCol + 1}`,
+            gridRow: 1
+          }}
+        >
+          Cara {String.fromCharCode(65 + index)}
+        </div>
+      );
+
+      startCol = endCol + 2; // +1 para siguiente cara, +1 para separador
+    });
+
+    return labels;
   };
 
   return (
@@ -37,37 +114,73 @@ function DiagramaPallet({ palletData, basePallet, alturaPallet }) {
       </div>
 
       {/* Grilla de cajas */}
-      <div 
-        className="pallet-grid"
-        style={{ 
-          gridTemplateColumns: `repeat(${basePallet}, 1fr)`,
-          gridTemplateRows: `repeat(${alturaPallet}, 1fr)`
-        }}
-      >
-        {palletData.cajas.map((caja) => {
-          // Calcular row desde abajo (capa 1 en la parte inferior)
-          const rowFromTop = caja.capa;
-          const rowFromBottom = alturaPallet - rowFromTop + 1;
-          const col = ((caja.numero_local - 1) % basePallet) + 1;
+      <div className="pallet-grid-wrapper">
+        {distribucionCaras.length > 1 && (
+          <div className="caras-labels">
+            {distribucionCaras.map((cols, index) => (
+              <div key={index} className="cara-label-top" style={{ flex: cols }}>
+                Cara {String.fromCharCode(65 + index)}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <div 
+          className="pallet-grid"
+          style={{ 
+            gridTemplateColumns: getGridTemplateColumns(),
+            gridTemplateRows: `repeat(${alturaPallet}, 1fr)`
+          }}
+        >
+          {/* Separadores verticales entre caras */}
+          {distribucionCaras.length > 1 && distribucionCaras.map((cols, index) => {
+            if (index === 0) return null; // No hay separador antes de la primera cara
+            
+            // Calcular columna del separador
+            const colAnterior = distribucionCaras.slice(0, index).reduce((sum, c) => sum + c, 0);
+            const gridCol = colAnterior + index + 1; // +index por los separadores anteriores
+            
+            return (
+              <div
+                key={`separator-${index}`}
+                className="cara-separator"
+                style={{
+                  gridColumn: gridCol,
+                  gridRow: `1 / ${alturaPallet + 1}`
+                }}
+              />
+            );
+          })}
           
-          return (
-            <div
-              key={caja.numero}
-              className={`box-cell ${caja.seleccionada ? 'box-selected' : ''}`}
-              onClick={() => handleBoxClick(caja)}
-              title={`Caja ${caja.numero} - Capa ${caja.capa}`}
-              style={{
-                gridRow: rowFromBottom,
-                gridColumn: col
-              }}
-            >
-              <span className="box-number">{caja.numero}</span>
-              {caja.seleccionada && (
-                <span className="box-indicator">✓</span>
-              )}
-            </div>
-          );
-        })}
+          {palletData.cajas.map((caja) => {
+            // Calcular row desde abajo (capa 1 en la parte inferior)
+            const rowFromTop = caja.capa;
+            const rowFromBottom = alturaPallet - rowFromTop + 1;
+            const col = ((caja.numero_local - 1) % basePallet) + 1;
+            
+            // Calcular gridColumn considerando separadores
+            const caraInfo = getCaraInfo(col);
+            const gridCol = col + caraInfo.offsetCols;
+            
+            return (
+              <div
+                key={caja.numero}
+                className={`box-cell ${caja.seleccionada ? 'box-selected' : ''}`}
+                onClick={() => handleBoxClick(caja)}
+                title={`Caja ${caja.numero} - Capa ${caja.capa}`}
+                style={{
+                  gridRow: rowFromBottom,
+                  gridColumn: gridCol
+                }}
+              >
+                <span className="box-number">{caja.numero}</span>
+                {caja.seleccionada && (
+                  <span className="box-indicator">✓</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Leyenda */}

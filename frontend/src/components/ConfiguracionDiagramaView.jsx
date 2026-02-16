@@ -17,6 +17,33 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
     initializeConfigurations();
   }, [inspection]);
 
+  /**
+   * Obtiene la distribución de caras sugerida según la base
+   */
+  const getDefaultDistribucion = (base) => {
+    const baseNum = parseInt(base);
+    if (isNaN(baseNum) || baseNum < 1) return [];
+
+    // Templates predefinidos
+    switch (baseNum) {
+      case 5:
+        return [2, 3]; // Cara A: 2 cols, Cara B: 3 cols
+      case 6:
+        return [3, 3]; // Cara A: 3 cols, Cara B: 3 cols
+      case 8:
+        return [4, 4]; // Cara A: 4 cols, Cara B: 4 cols
+      case 10:
+        return [5, 5]; // Cara A: 5 cols, Cara B: 5 cols
+      default:
+        // Para otras bases, intentar dividir en 2 caras iguales
+        if (baseNum % 2 === 0) {
+          return [baseNum / 2, baseNum / 2];
+        }
+        // Si es impar, dividir lo más equitativo posible
+        return [Math.floor(baseNum / 2), Math.ceil(baseNum / 2)];
+    }
+  };
+
   const initializeConfigurations = () => {
     // Determinar qué pallets configurar
     let palletsToConfig = [];
@@ -41,7 +68,12 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
 
     const configs = palletsToConfig.map(numPallet => {
       if (configMap[numPallet]) {
-        return configMap[numPallet];
+        // Si ya existe configuración, asegurarse de que tenga distribucion_caras
+        return {
+          ...configMap[numPallet],
+          distribucion_caras: configMap[numPallet].distribucion_caras || getDefaultDistribucion(configMap[numPallet].base),
+          distribucion_personalizada: configMap[numPallet].distribucion_personalizada || false
+        };
       }
       
       // Si existe boxes_per_pallet, usar ese valor como cantidad_cajas por defecto
@@ -50,7 +82,9 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
       return {
         numero_pallet: numPallet,
         base: '',
-        cantidad_cajas: cantidadCajasDefault
+        cantidad_cajas: cantidadCajasDefault,
+        distribucion_caras: [],
+        distribucion_personalizada: false
       };
     });
 
@@ -60,8 +94,56 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
   const handleConfigChange = (index, field, value) => {
     const newConfigs = [...configurations];
     newConfigs[index][field] = value;
+    
+    // Si cambia la base y no está en modo personalizado, actualizar distribucion_caras
+    if (field === 'base' && !newConfigs[index].distribucion_personalizada) {
+      newConfigs[index].distribucion_caras = getDefaultDistribucion(value);
+    }
+    
     setConfigurations(newConfigs);
     setError(null);
+  };
+
+  const handleDistribucionChange = (index, caraIndex, value) => {
+    const newConfigs = [...configurations];
+    const newDistribucion = [...(newConfigs[index].distribucion_caras || [])];
+    newDistribucion[caraIndex] = parseInt(value) || 0;
+    newConfigs[index].distribucion_caras = newDistribucion;
+    newConfigs[index].distribucion_personalizada = true;
+    setConfigurations(newConfigs);
+    setError(null);
+  };
+
+  const togglePersonalizado = (index) => {
+    const newConfigs = [...configurations];
+    const config = newConfigs[index];
+    
+    if (config.distribucion_personalizada) {
+      // Volver al template predefinido
+      config.distribucion_personalizada = false;
+      config.distribucion_caras = getDefaultDistribucion(config.base);
+    } else {
+      // Activar modo personalizado
+      config.distribucion_personalizada = true;
+    }
+    
+    setConfigurations(newConfigs);
+  };
+
+  const agregarCara = (index) => {
+    const newConfigs = [...configurations];
+    const distribucion = newConfigs[index].distribucion_caras || [];
+    newConfigs[index].distribucion_caras = [...distribucion, 1];
+    newConfigs[index].distribucion_personalizada = true;
+    setConfigurations(newConfigs);
+  };
+
+  const eliminarCara = (index, caraIndex) => {
+    const newConfigs = [...configurations];
+    const newDistribucion = [...(newConfigs[index].distribucion_caras || [])];
+    newDistribucion.splice(caraIndex, 1);
+    newConfigs[index].distribucion_caras = newDistribucion;
+    setConfigurations(newConfigs);
   };
 
   const applyToAll = () => {
@@ -88,6 +170,17 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
       if (parseInt(config.base) < 1 || parseInt(config.cantidad_cajas) < 1) {
         return 'Base y cantidad de cajas deben ser mayores a 0';
       }
+      
+      // Validar distribución de caras
+      const distribucion = config.distribucion_caras || [];
+      if (distribucion.length === 0) {
+        return `Debe definir la distribución de caras para el pallet ${config.numero_pallet}`;
+      }
+      
+      const sumaCaras = distribucion.reduce((sum, cols) => sum + (parseInt(cols) || 0), 0);
+      if (sumaCaras !== parseInt(config.base)) {
+        return `La suma de columnas en las caras (${sumaCaras}) debe coincidir con la base (${config.base}) en el pallet ${config.numero_pallet}`;
+      }
     }
     return null;
   };
@@ -108,7 +201,8 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
         configurations: configurations.map(c => ({
           numero_pallet: c.numero_pallet,
           base: parseInt(c.base),
-          cantidad_cajas: parseInt(c.cantidad_cajas)
+          cantidad_cajas: parseInt(c.cantidad_cajas),
+          distribucion_caras: c.distribucion_caras || getDefaultDistribucion(c.base)
         }))
       };
 
@@ -208,6 +302,7 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
                   <th>Pallet</th>
                   <th>Base (cajas por capa)</th>
                   <th>Cantidad de Cajas</th>
+                  <th>Distribución de Caras</th>
                   <th>Capas Calculadas</th>
                 </tr>
               </thead>
@@ -216,6 +311,9 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
                   const base = parseInt(config.base) || 0;
                   const cantidad = parseInt(config.cantidad_cajas) || 0;
                   const capas = base > 0 && cantidad > 0 ? Math.ceil(cantidad / base) : 0;
+                  const distribucion = config.distribucion_caras || [];
+                  const sumaCaras = distribucion.reduce((sum, cols) => sum + (parseInt(cols) || 0), 0);
+                  const distribucionValida = sumaCaras === base && base > 0;
                   
                   return (
                     <tr key={config.numero_pallet}>
@@ -241,6 +339,83 @@ function ConfiguracionDiagramaView({ inspection, onConfigured, onClose }) {
                           placeholder="Ej: 28"
                           className="config-input"
                         />
+                      </td>
+                      <td>
+                        <div className="distribucion-cell">
+                          {/* Mostrar template o modo personalizado */}
+                          {!config.distribucion_personalizada && base > 0 ? (
+                            <div className="distribucion-template">
+                              <span className="template-badge">
+                                {distribucion.map((cols, idx) => (
+                                  <span key={idx}>
+                                    Cara {String.fromCharCode(65 + idx)}: {cols}
+                                    {idx < distribucion.length - 1 ? ' + ' : ''}
+                                  </span>
+                                ))}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn-icon btn-edit"
+                                onClick={() => togglePersonalizado(index)}
+                                title="Personalizar distribución"
+                              >
+                                ✏️
+                              </button>
+                            </div>
+                          ) : base > 0 ? (
+                            <div className="distribucion-personalizada">
+                              <div className="caras-inputs">
+                                {distribucion.map((cols, caraIdx) => (
+                                  <div key={caraIdx} className="cara-input-group">
+                                    <label className="cara-label">Cara {String.fromCharCode(65 + caraIdx)}</label>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={cols}
+                                      onChange={(e) => handleDistribucionChange(index, caraIdx, e.target.value)}
+                                      className="cara-input"
+                                    />
+                                    {distribucion.length > 1 && (
+                                      <button
+                                        type="button"
+                                        className="btn-icon btn-remove"
+                                        onClick={() => eliminarCara(index, caraIdx)}
+                                        title="Eliminar cara"
+                                      >
+                                        ×
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="distribucion-actions">
+                                <button
+                                  type="button"
+                                  className="btn-icon btn-add"
+                                  onClick={() => agregarCara(index)}
+                                  title="Agregar cara"
+                                >
+                                  + Cara
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-icon btn-reset"
+                                  onClick={() => togglePersonalizado(index)}
+                                  title="Volver al template"
+                                >
+                                  ↺ Template
+                                </button>
+                              </div>
+                              {!distribucionValida && (
+                                <div className="dist-error">
+                                  ⚠️ Suma: {sumaCaras} (debe ser {base})
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="placeholder-text">Ingrese base primero</span>
+                          )}
+                        </div>
                       </td>
                       <td className="total-cell">
                         <span className={`total-badge ${capas > 0 ? 'has-value' : ''}`}>
