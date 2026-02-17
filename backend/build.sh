@@ -3,6 +3,9 @@
 
 set -o errexit
 
+# Ir al directorio backend
+cd backend
+
 echo "Instalando dependencias..."
 pip install --upgrade pip
 pip install -r requirements.txt
