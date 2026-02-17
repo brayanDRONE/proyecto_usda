@@ -232,8 +232,9 @@ class ZebraServiceHandler(BaseHTTPRequestHandler):
             printers = get_available_printers()
             response = {
                 "status": "online",
-                "printers_available": printers,
-                "zebra_available": any('zebra' in p.lower() or 'zdesigner' in p.lower() for p in printers)
+                "printers": printers,  # Cambiado de printers_available a printers
+                "printers_available": printers,  # Mantener por compatibilidad
+                "zebra_available": len(printers) > 0  # True si hay cualquier impresora
             }
             self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
         else:

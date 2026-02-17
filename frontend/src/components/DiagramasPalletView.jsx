@@ -144,7 +144,7 @@ function DiagramasPalletView({ inspection, onClose }) {
     const cellSize = Math.min(
       (pageWidth - 30 - totalSeparatorWidth) / base,
       availableHeight / altura,
-      8  // Máximo 8mm por celda
+      14  // Máximo 14mm por celda (aumentado para mejor legibilidad)
     );
 
     const gridWidth = base * cellSize + totalSeparatorWidth;
@@ -241,7 +241,7 @@ function DiagramasPalletView({ inspection, onClose }) {
       doc.rect(x, y, cellSize, cellSize, 'FD');
 
       // Número de caja
-      const fontSize = Math.min(cellSize * 0.5, 7);
+      const fontSize = Math.min(cellSize * 0.6, 11);  // Aumentado de 7pt a 11pt para mejor legibilidad
       doc.setFontSize(fontSize);
       doc.setFont('helvetica', 'bold');
       doc.text(
