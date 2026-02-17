@@ -149,17 +149,43 @@ echo   INSTALADOR - SERVICIO IMPRESION ZEBRA
 echo ================================================
 echo.
 
-REM Copiar ejecutable a Archivos de Programa
-set INSTALL_DIR=%ProgramFiles%\ZebraServiceUSDA
+REM Verificar permisos de administrador
+net session >nul 2>&1
+if %errorLevel% == 0 (
+    echo Ejecutando con permisos de administrador...
+    set INSTALL_DIR=%ProgramFiles%\ZebraServiceUSDA
+) else (
+    echo NOTA: Sin permisos de administrador.
+    echo Instalando en carpeta de usuario...
+    set INSTALL_DIR=%LOCALAPPDATA%\ZebraServiceUSDA
+)
+
 echo Instalando en: %INSTALL_DIR%
 echo.
 
-if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+REM Crear directorio si no existe
+if not exist "%INSTALL_DIR%" (
+    mkdir "%INSTALL_DIR%"
+    if errorlevel 1 (
+        echo ERROR: No se pudo crear el directorio.
+        echo Por favor, ejecute como Administrador.
+        pause
+        exit /b 1
+    )
+)
+
+REM Copiar ejecutable
+echo Copiando archivos...
 copy /Y ServicioImpresionZebra.exe "%INSTALL_DIR%\"
+if errorlevel 1 (
+    echo ERROR: No se pudo copiar el ejecutable.
+    pause
+    exit /b 1
+)
 
 REM Crear acceso directo en Inicio
 set STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
-echo Configurando inicio automático...
+echo Configurando inicio automatico...
 powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%STARTUP_DIR%\ServicioImpresionZebra.lnk'); $s.TargetPath = '%INSTALL_DIR%\ServicioImpresionZebra.exe'; $s.Save()"
 
 echo.
@@ -167,12 +193,17 @@ echo ================================================
 echo   INSTALACION COMPLETADA
 echo ================================================
 echo.
-echo El servicio se iniciará automaticamente al encender el PC.
+echo Ubicacion: %INSTALL_DIR%
+echo El servicio se iniciara automaticamente al reiniciar.
 echo.
 echo Presione cualquier tecla para iniciar el servicio ahora...
 pause > nul
 
+echo.
+echo Iniciando servicio...
 start "" "%INSTALL_DIR%\ServicioImpresionZebra.exe"
+
+timeout /t 2 /nobreak > nul
 
 echo.
 echo Servicio iniciado. Busque el icono verde en la bandeja del sistema.

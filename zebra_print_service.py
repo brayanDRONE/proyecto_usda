@@ -79,7 +79,12 @@ def build_zpl_double_label(lote, left_num, right_num=None):
 
     zpl = []
     zpl.append("^XA")
-    zpl.append("^LH0,0")
+    
+    # Configurar tamaño de etiqueta: ancho total (10cm = dos etiquetas de 5cm), alto 5cm
+    total_width = LABEL_W * 2  # Dos etiquetas lado a lado
+    zpl.append(f"^PW{total_width}")  # Ancho de impresión total
+    zpl.append(f"^LL{LABEL_H}")      # Largo de etiqueta
+    zpl.append("^LH0,0")             # Label home position
 
     # --- IZQUIERDA ---
     # MUESTRA (arriba)
@@ -157,6 +162,13 @@ def imprimir_etiquetas(lote, numeros_caja, printer_name="ZDesigner ZD230-203dpi 
             left = str(numeros_caja[i])
             right = str(numeros_caja[i+1]) if i+1 < len(numeros_caja) else None
             etiqueta_zpl = build_zpl_double_label(lote, left, right)
+            
+            # Log para debugging
+            print(f"\n{'='*60}")
+            print(f"Imprimiendo tira {strips_printed + 1}: Izq={left}, Der={right or 'vacío'}")
+            print(f"ZPL generado:")
+            print(etiqueta_zpl)
+            print(f"{'='*60}\n")
             
             win32print.StartDocPrinter(hPrinter, 1, ("Etiqueta USDA", None, "RAW"))
             win32print.StartPagePrinter(hPrinter)
