@@ -1,0 +1,31 @@
+services:
+  # Backend Django
+  - type: web
+    name: usda-backend
+    runtime: python
+    plan: free
+    buildCommand: "./backend/build.sh"
+    startCommand: "cd backend && python manage.py migrate && gunicorn config.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: usda-db
+          property: connectionString
+
+databases:
+  - name: usda-db
+    plan: free
+    databaseName: usda_production
+    user: usda_user
