@@ -26,17 +26,11 @@ def get_available_printers():
     flags = win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
     return [p[2] for p in win32print.EnumPrinters(flags)]
 
-def build_zpl_double_label(lote, left_num, right_num=None):
+def build_zpl_single_label(lote, numero):
     """
-    Construye ZPL para una tira con dos etiquetas 5x5cm lado a lado.
-    Ajusta el tamaño del número para que quepa: si el número es muy largo
-    (ej. 4 dígitos) reduce la altura hasta que entre en el ancho disponible.
-    Mantiene el diseño: MUESTRA/USDA arriba, número grande centrado,
-    debajo "LOTE: <número>" y "MUESTRA"/"USDA" con tamaño aumentado.
+    Construye ZPL para UNA etiqueta 5x5cm.
+    Diseño: MUESTRA/USDA arriba, número grande centrado, LOTE abajo.
     """
-    left_x = 0
-    right_x = LABEL_W
-
     SCALE = 1.2  # agrandar 20% por defecto para subtexto
     max_big_by_height = max(1, int(LABEL_H * 0.6 * SCALE))   # altura máxima del número
     sub_font_h = max(10, int(LABEL_H * 0.08 * SCALE))       # tamaño de subtexto aumentado 20%
@@ -47,7 +41,6 @@ def build_zpl_double_label(lote, left_num, right_num=None):
             return max_height
         chars = max(1, len(str(text)))
         usable_width = int(max_width * 0.85)  # dejar 15% de margen lateral
-        # altura estimada permitida por ancho: usable_width / (chars * char_width_ratio)
         approx_h = int(usable_width / (chars * 0.6))
         return max(10, min(max_height, approx_h))
 
@@ -64,68 +57,41 @@ def build_zpl_double_label(lote, left_num, right_num=None):
     reserved_bottom = sub_font_h + int(sub_font_h * 0.5)
     available_for_number = LABEL_H - reserved_top - reserved_bottom
 
-    # Base para centrar usando la altura máxima; números más pequeños se centran dentro del mismo bloque
+    # Base para centrar usando la altura máxima
     number_block_h = min(max_big_by_height, available_for_number)
     number_y_base = reserved_top + int((available_for_number - number_block_h) / 2)
     lote_y = number_y_base + number_block_h + int(sub_font_h * 0.2)
 
-    # Calcular altura final para cada número (ajustar si es muy largo)
-    left_big_h = fit_number_font_height(left_num, number_block_h, LABEL_W)
-    right_big_h = fit_number_font_height(right_num if right_num is not None else "", number_block_h, LABEL_W)
-
-    # Ajustar y para centrar cada número dentro del bloque reservado
-    left_number_y = number_y_base + int((number_block_h - left_big_h) / 2)
-    right_number_y = number_y_base + int((number_block_h - right_big_h) / 2)
+    # Calcular altura final del número
+    big_h = fit_number_font_height(numero, number_block_h, LABEL_W)
+    number_y = number_y_base + int((number_block_h - big_h) / 2)
 
     zpl = []
     zpl.append("^XA")
     
-    # Configurar tamaño de etiqueta: ancho total (10cm = dos etiquetas de 5cm), alto 5cm
-    total_width = LABEL_W * 2  # Dos etiquetas lado a lado
-    zpl.append(f"^PW{total_width}")  # Ancho de impresión total
-    zpl.append(f"^LL{LABEL_H}")      # Largo de etiqueta
-    zpl.append("^LH0,0")             # Label home position
+    # Configurar tamaño de etiqueta individual 5x5cm
+    zpl.append(f"^PW{LABEL_W}")  # Ancho de etiqueta (5cm)
+    zpl.append(f"^LL{LABEL_H}")  # Alto de etiqueta (5cm)
+    zpl.append("^LH0,0")          # Label home position
 
-    # --- IZQUIERDA ---
     # MUESTRA (arriba)
     zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO{left_x},{muestra_y}^FB{LABEL_W},1,0,C,0")
+    zpl.append(f"^FO0,{muestra_y}^FB{LABEL_W},1,0,C,0")
     zpl.append(f"^FDMUESTRA^FS")
+    
     # USDA (debajo)
     zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO{left_x},{usda_y}^FB{LABEL_W},1,0,C,0")
+    zpl.append(f"^FO0,{usda_y}^FB{LABEL_W},1,0,C,0")
     zpl.append(f"^FDUSDA^FS")
 
-    # Número grande (centrado) - IZQUIERDA
-    zpl.append(f"^CF0,{left_big_h}")
-    zpl.append(f"^FO{left_x},{left_number_y}")
-    zpl.append(f"^FB{LABEL_W},1,0,C,0")
-    zpl.append(f"^FD{left_num}^FS")
+    # Número grande (centrado)
+    zpl.append(f"^CF0,{big_h}")
+    zpl.append(f"^FO0,{number_y}^FB{LABEL_W},1,0,C,0")
+    zpl.append(f"^FD{numero}^FS")
 
-    # LOTE debajo del número - IZQUIERDA
+    # LOTE debajo del número
     zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO{left_x},{lote_y}^FB{LABEL_W},1,0,C,0")
-    zpl.append(f"^FDLOTE: {lote}^FS")
-
-    # --- DERECHA ---
-    # MUESTRA (arriba)
-    zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO{right_x},{muestra_y}^FB{LABEL_W},1,0,C,0")
-    zpl.append(f"^FDMUESTRA^FS")
-    # USDA (debajo)
-    zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO{right_x},{usda_y}^FB{LABEL_W},1,0,C,0")
-    zpl.append(f"^FDUSDA^FS")
-
-    # Número grande (centrado) - DERECHA
-    zpl.append(f"^CF0,{right_big_h}")
-    zpl.append(f"^FO{right_x},{right_number_y}")
-    zpl.append(f"^FB{LABEL_W},1,0,C,0")
-    zpl.append(f"^FD{right_num if right_num is not None else ''}^FS")
-
-    # LOTE debajo del número derecho (siempre mostrar lote)
-    zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO{right_x},{lote_y}^FB{LABEL_W},1,0,C,0")
+    zpl.append(f"^FO0,{lote_y}^FB{LABEL_W},1,0,C,0")
     zpl.append(f"^FDLOTE: {lote}^FS")
 
     zpl.append("^XZ")
@@ -155,17 +121,15 @@ def imprimir_etiquetas(lote, numeros_caja, printer_name="ZDesigner ZD230-203dpi 
     try:
         hPrinter = win32print.OpenPrinter(printer_name)
         
-        # Imprimir en pares: (0,1), (2,3), ...
-        i = 0
-        strips_printed = 0
-        while i < len(numeros_caja):
-            left = str(numeros_caja[i])
-            right = str(numeros_caja[i+1]) if i+1 < len(numeros_caja) else None
-            etiqueta_zpl = build_zpl_double_label(lote, left, right)
+        # Imprimir una etiqueta 5x5cm por cada número
+        labels_printed = 0
+        for numero in numeros_caja:
+            numero_str = str(numero)
+            etiqueta_zpl = build_zpl_single_label(lote, numero_str)
             
             # Log para debugging
             print(f"\n{'='*60}")
-            print(f"Imprimiendo tira {strips_printed + 1}: Izq={left}, Der={right or 'vacío'}")
+            print(f"Imprimiendo etiqueta {labels_printed + 1}/{len(numeros_caja)}: Número={numero_str}")
             print(f"ZPL generado:")
             print(etiqueta_zpl)
             print(f"{'='*60}\n")
@@ -176,12 +140,11 @@ def imprimir_etiquetas(lote, numeros_caja, printer_name="ZDesigner ZD230-203dpi 
             win32print.EndPagePrinter(hPrinter)
             win32print.EndDocPrinter(hPrinter)
             
-            strips_printed += 1
-            i += 2
+            labels_printed += 1
 
         return {
             "success": True,
-            "message": f"✅ Se imprimieron {strips_printed} tiras ({len(numeros_caja)} etiquetas) en '{printer_name}'"
+            "message": f"✅ Se imprimieron {labels_printed} etiquetas de 5x5cm en '{printer_name}'"
         }
     
     except Exception as e:
