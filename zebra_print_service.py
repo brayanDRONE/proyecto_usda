@@ -74,24 +74,24 @@ def build_zpl_single_label(lote, numero):
     zpl.append(f"^LL{LABEL_H}")  # Alto de etiqueta (5cm)
     zpl.append("^LH0,0")          # Label home position
 
-    # MUESTRA (arriba)
-    zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO0,{muestra_y}^FB{LABEL_W},1,0,C,0")
+    # MUESTRA (arriba) - usando ^A para fuente más compatible
+    zpl.append(f"^FO0,{muestra_y}^A0N,{sub_font_h},{sub_font_h}")
+    zpl.append(f"^FB{LABEL_W},1,0,C,0")
     zpl.append(f"^FDMUESTRA^FS")
     
     # USDA (debajo)
-    zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO0,{usda_y}^FB{LABEL_W},1,0,C,0")
+    zpl.append(f"^FO0,{usda_y}^A0N,{sub_font_h},{sub_font_h}")
+    zpl.append(f"^FB{LABEL_W},1,0,C,0")
     zpl.append(f"^FDUSDA^FS")
 
     # Número grande (centrado)
-    zpl.append(f"^CF0,{big_h}")
-    zpl.append(f"^FO0,{number_y}^FB{LABEL_W},1,0,C,0")
+    zpl.append(f"^FO0,{number_y}^A0N,{big_h},{big_h}")
+    zpl.append(f"^FB{LABEL_W},1,0,C,0")
     zpl.append(f"^FD{numero}^FS")
 
     # LOTE debajo del número
-    zpl.append(f"^CF0,{sub_font_h}")
-    zpl.append(f"^FO0,{lote_y}^FB{LABEL_W},1,0,C,0")
+    zpl.append(f"^FO0,{lote_y}^A0N,{sub_font_h},{sub_font_h}")
+    zpl.append(f"^FB{LABEL_W},1,0,C,0")
     zpl.append(f"^FDLOTE: {lote}^FS")
 
     zpl.append("^XZ")
