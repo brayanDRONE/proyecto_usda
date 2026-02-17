@@ -252,7 +252,8 @@ function SamplingResultView({ result, onNewInspection }) {
       }
 
       const healthData = await healthResponse.json();
-      const printers = healthData.printers || [];
+      // Retrocompatibilidad: aceptar tanto 'printers' como 'printers_available'
+      const printers = healthData.printers || healthData.printers_available || [];
 
       if (printers.length === 0) {
         throw new Error('No se detectaron impresoras en el sistema');
