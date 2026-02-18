@@ -279,6 +279,7 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
                 <>
                   <input
                     type="text"
+                    id="establishment"
                     value={user?.establishment?.nombre || ''}
                     readOnly
                     disabled
@@ -286,7 +287,6 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
                   />
                   <input
                     type="hidden"
-                    id="establishment"
                     name="establishment"
                     value={formData.establishment}
                   />
