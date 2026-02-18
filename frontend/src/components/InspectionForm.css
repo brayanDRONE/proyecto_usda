@@ -93,6 +93,23 @@
   color: #9ca3af;
 }
 
+/* Campos de solo lectura */
+.form-group input.readonly-field,
+.form-group input[readonly],
+.form-group input[disabled] {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+}
+
+.form-group input.readonly-field:focus,
+.form-group input[readonly]:focus,
+.form-group input[disabled]:focus {
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
 .error-message {
   display: flex;
   align-items: center;

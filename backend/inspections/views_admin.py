@@ -294,6 +294,7 @@ class CurrentUserViewSet(viewsets.ViewSet):
             data['establishment'] = {
                 'id': establishment.id,
                 'nombre': establishment.planta_fruticola,
+                'exportadora': establishment.exportadora or '',
                 'has_active_subscription': establishment.has_active_subscription(),
                 'subscription_expiry': establishment.subscription_expiry,
                 'days_until_expiry': establishment.days_until_expiry()

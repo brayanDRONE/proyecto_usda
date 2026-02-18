@@ -3,14 +3,17 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import StageSamplingPanel from './StageSamplingPanel';
 import './InspectionForm.css';
 
 function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
+  const { user } = useAuth();
   const [establishments, setEstablishments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] =useState(null);
+  const [isEstablishmentFixed, setIsEstablishmentFixed] = useState(false);
   
   const [formData, setFormData] = useState({
     exportador: '',
@@ -100,7 +103,17 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
 
   useEffect(() => {
     loadEstablishments();
-  }, []);
+    
+    // Autocompletar campos si el usuario tiene un establecimiento asignado
+    if (user?.establishment) {
+      setFormData(prev => ({
+        ...prev,
+        exportador: user.establishment.exportadora || '',
+        establishment: user.establishment.id.toString()
+      }));
+      setIsEstablishmentFixed(true);
+    }
+  }, [user]);
 
   const loadEstablishments = async () => {
     try {
@@ -250,26 +263,51 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
                 value={formData.exportador}
                 onChange={handleChange}
                 required
+                readOnly={isEstablishmentFixed}
+                disabled={isEstablishmentFixed}
                 placeholder="Nombre del exportador"
+                className={isEstablishmentFixed ? 'readonly-field' : ''}
               />
+              {isEstablishmentFixed && (
+                <small className="field-hint">Campo asignado según su establecimiento</small>
+              )}
             </div>
 
             <div className="form-group">
               <label htmlFor="establishment">Planta/Establecimiento *</label>
-              <select
-                id="establishment"
-                name="establishment"
-                value={formData.establishment}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Seleccione...</option>
-                {establishments.map(est => (
-                  <option key={est.id} value={est.id}>
-                    {est.planta_fruticola}
-                  </option>
-                ))}
-              </select>
+              {isEstablishmentFixed ? (
+                <>
+                  <input
+                    type="text"
+                    value={user?.establishment?.nombre || ''}
+                    readOnly
+                    disabled
+                    className="readonly-field"
+                  />
+                  <input
+                    type="hidden"
+                    id="establishment"
+                    name="establishment"
+                    value={formData.establishment}
+                  />
+                  <small className="field-hint">Campo asignado según su establecimiento</small>
+                </>
+              ) : (
+                <select
+                  id="establishment"
+                  name="establishment"
+                  value={formData.establishment}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Seleccione...</option>
+                  {establishments.map(est => (
+                    <option key={est.id} value={est.id}>
+                      {est.planta_fruticola}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 
