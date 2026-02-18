@@ -106,7 +106,6 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
     
     // Autocompletar campos si el usuario tiene un establecimiento asignado
     if (user?.establishment) {
-      console.log('Usuario con establecimiento detectado:', user.establishment);
       setFormData(prev => ({
         ...prev,
         exportador: user.establishment.exportadora || '',
@@ -114,7 +113,6 @@ function InspectionForm({ onSamplingGenerated, onSubscriptionError }) {
       }));
       setIsEstablishmentFixed(true);
     } else {
-      console.log('Usuario sin establecimiento o no cargado:', user);
       setIsEstablishmentFixed(false);
     }
   }, [user]);
