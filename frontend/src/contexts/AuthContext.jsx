@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('access_token', response.access);
       localStorage.setItem('refresh_token', response.refresh);
       
-      // Guardar usuario
-      const userData = response.user;
+      // Cargar datos completos del usuario
+      const userData = await apiService.getCurrentUser();
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
       
