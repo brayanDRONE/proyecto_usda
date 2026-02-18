@@ -374,6 +374,15 @@ class UserProfile(models.Model):
         related_name='profile',
         verbose_name='Usuario'
     )
+    establishment = models.ForeignKey(
+        Establishment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='staff_members',
+        verbose_name='Establecimiento Asignado',
+        help_text='Establecimiento al que pertenece este usuario (para inspectores y admins)'
+    )
     role = models.CharField(
         max_length=30,
         choices=USER_ROLE_CHOICES,

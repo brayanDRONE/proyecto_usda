@@ -288,9 +288,16 @@ class CurrentUserViewSet(viewsets.ViewSet):
         serializer = UserSerializer(request.user)
         data = serializer.data
         
-        # Agregar establecimiento si es admin de uno
+        establishment = None
+        
+        # Buscar establecimiento: primero como admin, luego en el perfil
         if hasattr(request.user, 'establishment_admin'):
             establishment = request.user.establishment_admin
+        elif hasattr(request.user, 'profile') and request.user.profile.establishment:
+            establishment = request.user.profile.establishment
+        
+        # Agregar información del establecimiento si existe
+        if establishment:
             data['establishment'] = {
                 'id': establishment.id,
                 'nombre': establishment.planta_fruticola,

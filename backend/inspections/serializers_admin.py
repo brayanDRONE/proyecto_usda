@@ -138,12 +138,6 @@ class EstablishmentCreateSerializer(serializers.ModelSerializer):
             last_name=admin_last_name
         )
         
-        # Crear perfil con rol de administrador de establecimiento
-        UserProfile.objects.create(
-            user=admin_user,
-            role='ESTABLISHMENT_ADMIN'
-        )
-        
         # Generar license key
         import uuid
         license_key = f"EST-{uuid.uuid4().hex[:12].upper()}"
@@ -154,6 +148,14 @@ class EstablishmentCreateSerializer(serializers.ModelSerializer):
             license_key=license_key,
             created_by=self.context['request'].user,
             **validated_data
+        )
+        
+        # Crear perfil con rol de administrador de establecimiento
+        # y asignar el establecimiento
+        UserProfile.objects.create(
+            user=admin_user,
+            role='ESTABLISHMENT_ADMIN',
+            establishment=establishment
         )
         
         # Crear tema por defecto
