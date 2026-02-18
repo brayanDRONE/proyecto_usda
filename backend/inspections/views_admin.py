@@ -67,12 +67,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['user']['is_superadmin'] = self.user.profile.is_superadmin()
             data['user']['is_establishment_admin'] = self.user.profile.is_establishment_admin()
         
-        # Agregar establecimiento si es admin de uno
+        establishment = None
+        
+        # Buscar establecimiento: primero como admin, luego en el perfil
         if hasattr(self.user, 'establishment_admin'):
             establishment = self.user.establishment_admin
+        elif hasattr(self.user, 'profile') and self.user.profile.establishment:
+            establishment = self.user.profile.establishment
+        
+        # Agregar establecimiento si existe
+        if establishment:
             data['user']['establishment'] = {
                 'id': establishment.id,
                 'nombre': establishment.planta_fruticola,
+                'exportadora': establishment.exportadora or '',
                 'has_active_subscription': establishment.has_active_subscription()
             }
         
