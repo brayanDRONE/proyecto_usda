@@ -32,6 +32,7 @@ function EstablishmentManagement() {
     admin_username: '',
     admin_email: '',
     admin_password: '',
+    confirm_password: '',
     subscription_days: 30
   });
 
@@ -67,6 +68,13 @@ function EstablishmentManagement() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar que las contraseñas coincidan
+    if (formData.admin_password !== formData.confirm_password) {
+      alert('Las contraseñas no coinciden. Por favor verifique.');
+      return;
+    }
+    
     try {
       // Usar el email de contacto como email del admin
       const dataToSend = {
@@ -86,6 +94,13 @@ function EstablishmentManagement() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar contraseñas si se está cambiando
+    if (formData.admin_password && formData.admin_password !== formData.confirm_password) {
+      alert('Las contraseñas no coinciden. Por favor verifique.');
+      return;
+    }
+    
     try {
       await apiService.updateEstablishment(selectedEstablishment.id, formData);
       setShowEditModal(false);
@@ -157,6 +172,7 @@ function EstablishmentManagement() {
       admin_username: '',
       admin_email: '',
       admin_password: '',
+      confirm_password: '',
       subscription_days: 30
     });
     setShowEditModal(true);
@@ -179,6 +195,7 @@ function EstablishmentManagement() {
       admin_username: '',
       admin_email: '',
       admin_password: '',
+      confirm_password: '',
       subscription_days: 30
     });
   };
@@ -493,6 +510,17 @@ function EstablishmentManagement() {
                   />
                   <small className="field-hint">Contraseña para acceder al sistema</small>
                 </div>
+                <div className="form-group">
+                  <label>Repetir Contraseña *</label>
+                  <input
+                    type="password"
+                    value={formData.confirm_password}
+                    onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
+                    placeholder="Repita la contraseña"
+                    required
+                  />
+                  <small className="field-hint">Debe coincidir con la contraseña anterior</small>
+                </div>
               </div>
 
               <div className="modal-footer">
@@ -517,6 +545,7 @@ function EstablishmentManagement() {
               <button onClick={() => setShowEditModal(false)} className="btn-close">×</button>
             </div>
             <form onSubmit={handleEditSubmit} className="modal-body">
+              <div className="form-section-title">Información de la Empresa</div>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Exportadora</label>
@@ -574,6 +603,31 @@ function EstablishmentManagement() {
                     value={formData.encargado_sag}
                     onChange={(e) => setFormData({ ...formData, encargado_sag: e.target.value })}
                   />
+                </div>
+              </div>
+
+              <div className="form-section-title">Cambiar Contraseña de Acceso</div>
+              <p className="form-section-note">Complete estos campos solo si desea asignar una nueva contraseña</p>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Nueva Contraseña</label>
+                  <input
+                    type="password"
+                    value={formData.admin_password}
+                    onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
+                    placeholder="Dejar vacío para mantener la actual"
+                  />
+                  <small className="field-hint">Mínimo 8 caracteres</small>
+                </div>
+                <div className="form-group">
+                  <label>Repetir Nueva Contraseña</label>
+                  <input
+                    type="password"
+                    value={formData.confirm_password}
+                    onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
+                    placeholder="Repita la nueva contraseña"
+                  />
+                  <small className="field-hint">Debe coincidir con la contraseña anterior</small>
                 </div>
               </div>
 

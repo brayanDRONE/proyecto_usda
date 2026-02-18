@@ -403,6 +403,14 @@
   margin-top: 0;
 }
 
+.form-section-note {
+  font-size: 14px;
+  color: #718096;
+  margin: -8px 0 16px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
 .form-section-description {
   font-size: 14px;
   color: #718096;

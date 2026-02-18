@@ -1,18 +1,21 @@
 from django.db import migrations
-from django.contrib.auth.models import User
 
 
 def create_superuser(apps, schema_editor):
     """Crea un superusuario por defecto si no existe"""
+    User = apps.get_model('auth', 'User')
     UserProfile = apps.get_model('inspections', 'UserProfile')
     
     if not User.objects.filter(username='admin').exists():
         # Crear superusuario
-        admin_user = User.objects.create_superuser(
+        admin_user = User.objects.create(
             username='admin',
             email='admin@usda.cl',
-            password='admin123'
+            is_superuser=True,
+            is_staff=True
         )
+        admin_user.set_password('admin123')
+        admin_user.save()
         
         # Crear perfil con rol SUPERADMIN
         UserProfile.objects.create(
