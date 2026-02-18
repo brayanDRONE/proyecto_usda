@@ -297,6 +297,7 @@ function EstablishmentManagement() {
                   <th>Exportadora</th>
                   <th>RUT</th>
                   <th>Encargado SAG</th>
+                  <th>Usuario Admin</th>
                   <th>Teléfono</th>
                   <th>Estado</th>
                   <th>Vence en</th>
@@ -315,6 +316,7 @@ function EstablishmentManagement() {
                     <td>{est.exportadora || '-'}</td>
                     <td>{est.rut || '-'}</td>
                     <td>{est.encargado_sag || '-'}</td>
+                    <td>{est.admin_user?.username || 'Sin asignar'}</td>
                     <td>{est.phone || '-'}</td>
                     <td>{getStatusBadge(est)}</td>
                     <td>
