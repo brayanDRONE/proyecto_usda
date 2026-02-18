@@ -114,21 +114,57 @@ psycopg2-binary==2.9.9
    Name: usda-backend
    Root Directory: backend
    Build Command: pip install -r requirements.txt
-   Start Command: gunicorn proyecto_usda.wsgi:application
+   Start Command: gunicorn config.wsgi:application
    ```
 
-**Variables de Entorno:**
-```
+**Variables de Entorno (CRÍTICO - Configurar correctamente):**
+```bash
 PYTHON_VERSION=3.11
-SECRET_KEY=tu-secret-key
+SECRET_KEY=tu-secret-key-super-segura-generada
 DEBUG=False
-ALLOWED_HOSTS=.render.com,.vercel.app
+ALLOWED_HOSTS=usda-backend-9di9.onrender.com
+
+# CORS - IMPORTANTE: Debe incluir TODOS los dominios de Vercel
+# Vercel genera múltiples dominios, agrégalos todos separados por coma
+CORS_ALLOWED_ORIGINS=https://tu-proyecto.vercel.app,https://tu-proyecto-git-main.vercel.app,https://tu-proyecto-git-main-usuario.vercel.app
+
+# CSRF - Mismo que CORS
+CSRF_TRUSTED_ORIGINS=https://tu-proyecto.vercel.app,https://tu-proyecto-git-main.vercel.app
+
+# Database (auto-generado por Render al agregar PostgreSQL)
 DATABASE_URL=postgresql://...
 ```
 
 **Agregar PostgreSQL:**
 - **New** → **PostgreSQL**
 - Copia la `Internal Database URL` a la variable `DATABASE_URL`
+
+**⚠️ IMPORTANTE - Después del primer deploy:**
+
+Abre la Shell de Render (Dashboard → tu servicio → Shell) y ejecuta:
+
+```bash
+# 1. Aplicar todas las migraciones
+python manage.py migrate
+
+# 2. Crear superusuario admin (comando personalizado)
+python manage.py create_admin
+```
+
+Esto creará automáticamente:
+- **Usuario:** admin
+- **Contraseña:** admin123
+- **Rol:** SUPERADMIN
+
+**Verificar que funcionó:**
+```bash
+# En la Shell de Render
+python manage.py shell
+>>> from django.contrib.auth.models import User
+>>> User.objects.filter(username='admin').exists()
+True  # ✅ Si ves True, está creado correctamente
+>>> exit()
+```
 
 ---
 
@@ -262,9 +298,102 @@ Después del despliegue tendrás:
 
 ## 🐛 Solución de Problemas
 
+### Error 401 - Unauthorized en /api/auth/login/
+
+**Síntoma:** `Failed to load resource: the server responded with a status of 401`
+
+**Causa:** El superusuario `admin` no existe en la base de datos de producción.
+
+**Solución:**
+```bash
+# Abre la Shell de Render/Railway
+python manage.py create_admin
+```
+
+Esto creará el usuario `admin` con contraseña `admin123`.
+
+---
+
+### Error 400 - Bad Request en /api/admin/establishments/
+
+**Síntoma:** `Failed to load resource: the server responded with a status of 400`
+
+**Causas posibles:**
+1. Falta algún campo requerido en el formulario
+2. El usuario admin no está autenticado correctamente
+3. Problema con el token de autenticación
+
+**Solución:**
+1. Verifica que el login funcione primero (resuelve el error 401)
+2. Revisa los logs del backend en Render:
+   ```bash
+   # En el dashboard de Render → Logs
+   # Busca detalles del error 400
+   ```
+3. Prueba la API directamente:
+   ```bash
+   # Primero obtén el token
+   curl -X POST https://usda-backend-9di9.onrender.com/api/auth/login/ \
+     -H "Content-Type: application/json" \
+     -d '{"username":"admin","password":"admin123"}'
+   
+   # Luego prueba crear establecimiento
+   curl -X POST https://usda-backend-9di9.onrender.com/api/admin/establishments/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer TU_TOKEN_AQUI" \
+     -d '{...datos del establecimiento...}'
+   ```
+
+---
+
+### CORS Errors - Access to XMLHttpRequest blocked
+
+**Síntoma:** 
+```
+Access to XMLHttpRequest blocked by CORS policy: 
+No 'Access-Control-Allow-Origin' header is present
+```
+
+**Causa:** El dominio de Vercel no está en `CORS_ALLOWED_ORIGINS` del backend.
+
+**Solución:**
+
+1. **Identifica TODOS los dominios de Vercel:**
+   - Ve a Vercel → Settings → Domains
+   - Verás múltiples dominios como:
+     - `tu-proyecto.vercel.app` (producción)
+     - `tu-proyecto-git-main.vercel.app` (rama main)
+     - `tu-proyecto-git-main-usuario.vercel.app` (deployment específico)
+
+2. **Actualiza variables en Render:**
+   - Ve a Render → Environment
+   - Edita `CORS_ALLOWED_ORIGINS`:
+     ```
+     https://proyecto-usda.vercel.app,https://proyecto-usda-git-main.vercel.app,https://proyecto-usda-git-main-brayan.vercel.app
+     ```
+   - Edita `CSRF_TRUSTED_ORIGINS` con los mismos valores
+   - Click en **Save Changes** (Render auto-redeploya)
+
+3. **Espera 2-3 minutos** para que Render redeploy y prueba nuevamente.
+
+---
+
+### Migraciones no aplicadas
+
+**Síntoma:** Errores de tablas o campos que no existen
+
+**Solución:**
+```bash
+# En Shell de Render/Railway
+python manage.py showmigrations
+python manage.py migrate
+```
+
+---
+
 ### CORS Errors
 - Verifica `CORS_ALLOWED_ORIGINS` en Django
-- Asegúrate de incluir el dominio de Vercel
+- Asegúrate de incluir TODOS los dominios de Vercel (no solo el principal)
 
 ### 500 Internal Server Error
 - Revisa logs en Railway/Render
