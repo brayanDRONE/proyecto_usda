@@ -95,10 +95,9 @@ function DiagramasPalletView({ inspection, onClose }) {
         // Calcular espacio disponible para 2 pallets optimizado
         const spaceBetweenPallets = 8; // Gap aumentado entre pallets para evitar solapamiento
         const topMargin = 5;
-        const bottomMargin = 5;
+        const bottomMargin = 15;
         const maxHeightPerPallet = (pageHeight - topMargin - bottomMargin - spaceBetweenPallets) / 2;
 
-        // Dibujar primer pallet (arriba)
         const palletTop = pallets[i];
         drawPalletOnPDF(doc, palletTop, inspData, pageWidth, topMargin, maxHeightPerPallet, true);
 
@@ -264,7 +263,7 @@ function DiagramasPalletView({ inspection, onClose }) {
     });
 
     // Leyenda compacta
-    const legendY = yPos + gridHeight + 5;
+    const legendY = yPos + gridHeight + 10;
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
@@ -337,29 +336,13 @@ function DiagramasPalletView({ inspection, onClose }) {
       <div className="diagramas-modal">
         {/* Header */}
         <div className="diagramas-header">
-          <div>
+          <div className="header-left">
             <h2>Diagramas de Pallets</h2>
             <p className="diagramas-subtitle">
-              Lote: {diagramData.inspection.numero_lote} - {diagramData.inspection.especie}
+              Lote: {diagramData.inspection.numero_lote} - {diagramData.inspection.especie} ({diagramData.total_pallets_mostrados} Pallets)
             </p>
           </div>
           <button className="btn-close" onClick={onClose}>×</button>
-        </div>
-
-        {/* Info general */}
-        <div className="diagramas-info">
-          <div className="info-item">
-            <span className="info-label">Pallets Mostrados:</span>
-            <span className="info-value">{diagramData.total_pallets_mostrados}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Lote:</span>
-            <span className="info-value">{diagramData.inspection.numero_lote}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Especie:</span>
-            <span className="info-value">{diagramData.inspection.especie}</span>
-          </div>
         </div>
 
         {/* Botones de acción */}

@@ -4,7 +4,7 @@
   background: #ffffff;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
-  padding: 10px;
+  padding: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative;
 }
@@ -14,14 +14,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
+  margin-bottom: 4px;
+  padding-bottom: 2px;
   border-bottom: 1px solid #f3f4f6;
 }
 
 .pallet-header h3 {
   margin: 0;
-  font-size: 0.95em;
+  font-size: 0.75em;
   font-weight: 700;
   color: #1f2937;
 }
@@ -33,9 +33,9 @@
 }
 
 .info-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.7em;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.6em;
   font-weight: 600;
   background: #f3f4f6;
   color: #6b7280;
@@ -55,28 +55,28 @@
 /* Grilla de cajas */
 .pallet-grid {
   display: grid;
-  gap: 2px;
-  padding: 8px;
+  gap: 1px;
+  padding: 2px;
   background: #f9fafb;
   border-radius: 4px;
-  margin-bottom: 10px;
-  min-height: 120px;
+  margin-bottom: 4px;
+  min-height: 60px;
 }
 
 .box-cell {
   position: relative;
   background: #ffffff;
-  border: 1.5px solid #d1d5db;
-  border-radius: 3px;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65em;
+  font-size: 0.55em;
   font-weight: 600;
   color: #374151;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 28px;
+  min-height: 18px;
   aspect-ratio: 1;
 }
 
@@ -118,8 +118,8 @@
 .pallet-legend {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  padding: 8px;
+  gap: 12px;
+  padding: 4px;
   background: #f9fafb;
   border-radius: 4px;
 }
@@ -127,17 +127,17 @@
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.75em;
+  gap: 4px;
+  font-size: 0.6em;
   color: #6b7280;
   font-weight: 500;
 }
 
 .legend-box {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  border: 1.5px solid;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid;
 }
 
 .legend-box-normal {

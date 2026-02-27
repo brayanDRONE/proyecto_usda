@@ -52,22 +52,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 32px;
+  gap: 20px;
+  padding: 16px 24px;
   border-bottom: 2px solid #e5e7eb;
   background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
   border-radius: 16px 16px 0 0;
 }
 
+.header-left {
+  flex: 1;
+}
+
 .diagramas-header h2 {
   margin: 0;
-  font-size: 1.5em;
+  font-size: 1.3em;
   font-weight: 700;
   color: #1f2937;
 }
 
 .diagramas-subtitle {
-  margin: 4px 0 0;
-  font-size: 0.95em;
+  margin: 2px 0 0;
+  font-size: 0.8em;
   color: #6b7280;
 }
 
@@ -95,39 +100,11 @@
   transform: rotate(90deg);
 }
 
-/* Info General */
-.diagramas-info {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  padding: 20px 32px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
 
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.info-label {
-  font-size: 0.85em;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-value {
-  font-size: 1.1em;
-  font-weight: 700;
-  color: #1f2937;
-}
 
 /* Actions */
 .diagramas-actions {
-  padding: 16px 32px;
+  padding: 12px 24px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   gap: 12px;
@@ -138,10 +115,10 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px 32px;
+  padding: 10px 12px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 10px;
   align-content: start;
 }
 
