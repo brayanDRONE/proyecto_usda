@@ -85,21 +85,28 @@ function DiagramasPalletView({ inspection, onClose }) {
       
       const { inspection: inspData, pallets } = diagramData;
 
-      // Procesar pallets de 2 en 2
+      // Procesar pallets de 2 en 2 (2 pallets por página)
       for (let i = 0; i < pallets.length; i += 2) {
         // Nueva página (excepto para los primeros 2 pallets)
         if (i > 0) {
           doc.addPage();
         }
 
+        // Calcular espacio disponible para 2 pallets optimizado
+        const spaceBetweenPallets = 8; // Gap aumentado entre pallets para evitar solapamiento
+        const topMargin = 5;
+        const bottomMargin = 5;
+        const maxHeightPerPallet = (pageHeight - topMargin - bottomMargin - spaceBetweenPallets) / 2;
+
         // Dibujar primer pallet (arriba)
         const palletTop = pallets[i];
-        drawPalletOnPDF(doc, palletTop, inspData, pageWidth, 10, pageHeight / 2 - 20, true);
+        drawPalletOnPDF(doc, palletTop, inspData, pageWidth, topMargin, maxHeightPerPallet, true);
 
         // Dibujar segundo pallet (abajo) si existe
         if (i + 1 < pallets.length) {
           const palletBottom = pallets[i + 1];
-          drawPalletOnPDF(doc, palletBottom, inspData, pageWidth, pageHeight / 2 + 5, pageHeight / 2 - 20, false);
+          const startYBottom = topMargin + maxHeightPerPallet + spaceBetweenPallets;
+          drawPalletOnPDF(doc, palletBottom, inspData, pageWidth, startYBottom, maxHeightPerPallet, false);
         }
       }
 
@@ -116,15 +123,16 @@ function DiagramasPalletView({ inspection, onClose }) {
   const drawPalletOnPDF = (doc, pallet, inspData, pageWidth, startY, maxHeight, isFirst) => {
     const { base, altura, cantidad_cajas, distribucion_caras = [] } = pallet;
 
-    // Encabezado del pallet
+    // Encabezado del pallet con más espacio si no es el primero
+    const headerY = isFirst ? startY + 5 : startY + 8;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Pallet ${pallet.numero_pallet}`, pageWidth / 2, startY + 5, { align: 'center' });
+    doc.text(`Pallet ${pallet.numero_pallet}`, pageWidth / 2, headerY, { align: 'center' });
 
     // Información compacta
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    let yPos = startY + 12;
+    let yPos = headerY + 7;
     
     if (isFirst) {
       doc.text(`Lote: ${inspData.numero_lote} | Especie: ${inspData.especie}`, 15, yPos);
@@ -140,12 +148,12 @@ function DiagramasPalletView({ inspection, onClose }) {
     const totalSeparatorWidth = numSeparators * separatorWidth;
 
     // Calcular tamaño de celda para que quepa en el espacio disponible
-    // Reducir márgenes laterales de 30 a 20 para aprovechar más ancho
-    const availableHeight = maxHeight - (yPos - startY) - 20;
+    // Márgenes mínimos optimizados para 2 pallets por página
+    const availableHeight = maxHeight - (yPos - startY) - 12;
     const cellSize = Math.min(
-      (pageWidth - 20 - totalSeparatorWidth) / base,  // Reducido de 30 a 20 para más ancho
+      (pageWidth - 2 - totalSeparatorWidth) / base,  // Márgenes de 1mm c/lado
       availableHeight / altura,
-      20  // Aumentado de 14mm a 20mm por celda para mejor legibilidad
+      55  // Reducido a 55mm para mayor separación entre números
     );
 
     const gridWidth = base * cellSize + totalSeparatorWidth;
@@ -241,14 +249,16 @@ function DiagramasPalletView({ inspection, onClose }) {
       doc.setLineWidth(0.3);
       doc.rect(x, y, cellSize, cellSize, 'FD');
 
-      // Número de caja - tamaño aumentado para mejor legibilidad
-      const fontSize = Math.min(cellSize * 0.7, 16);  // Aumentado de 11pt a 16pt y proporción de 0.6 a 0.7
+      // Número de caja - máxima separación para números de 1-4 dígitos
+      // Proporción muy conservadora: 28% del cellSize para amplio espaciado
+      // Evita completamente el solapamiento de números de 4 dígitos
+      const fontSize = Math.max(8, Math.min(cellSize * 0.28, 16));
       doc.setFontSize(fontSize);
       doc.setFont('helvetica', 'bold');
       doc.text(
         caja.numero.toString(),
         x + cellSize / 2,
-        y + cellSize / 2 + fontSize / 3,
+        y + cellSize / 2 + fontSize / 3.5,
         { align: 'center' }
       );
     });

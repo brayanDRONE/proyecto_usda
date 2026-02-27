@@ -151,9 +151,9 @@ function SamplingResultView({ result, onNewInspection }) {
     doc.setFont('helvetica', 'bold');
     doc.text('Números de Cajas Muestra:', pageWidth / 2, yPos, { align: 'center' });
     
-    // Preparar datos para tabla de 5 columnas
+    // Preparar datos para tabla de 10 columnas
     const cajas = sampling_result.cajas_seleccionadas;
-    const itemsPerRow = 5;
+    const itemsPerRow = 10;
     const cajasData = [];
     
     for (let i = 0; i < cajas.length; i += itemsPerRow) {
@@ -166,26 +166,26 @@ function SamplingResultView({ result, onNewInspection }) {
     }
     
     // Generar tabla con autoTable (sin encabezados)
+    // Crear columnStyles dinámicamente para 10 columnas
+    const columnStyles = {};
+    for (let i = 0; i < 10; i++) {
+      columnStyles[i] = { cellWidth: 18 }; // Columnas más estrechas para caber 10
+    }
+    
     autoTable(doc, {
       startY: yPos + 5,
       body: cajasData,
       theme: 'grid',
       styles: {
-        fontSize: 9,
+        fontSize: 10,
         cellPadding: 2,
         halign: 'center',
         lineWidth: 0.1,
         lineColor: [0, 0, 0],
       },
-      margin: { left: 15, right: 15 },
+      margin: { left: 10, right: 10 },
       tableWidth: 'auto',
-      columnStyles: {
-        0: { cellWidth: 35 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 35 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 35 },
-      },
+      columnStyles: columnStyles,
     });
     
     // ==================== CERTIFICADO DE PRE-MUESTREO ====================

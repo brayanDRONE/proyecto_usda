@@ -25,6 +25,26 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
+  // Detectar cambios de sesión (otro usuario inicia sesión en el mismo dispositivo)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'currentUserId') {
+        const newUserId = e.newValue;
+        const oldUserId = e.oldValue;
+        
+        // Si el ID de usuario cambió, significa que otro usuario inició sesión en otra pestaña
+        if (newUserId && oldUserId && newUserId !== oldUserId) {
+          console.warn('Sesión de otro usuario detectada, limpiando autenticación actual');
+          setUser(null);
+          window.location.href = '/login';
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const loadUser = async () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -35,10 +55,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await apiService.getCurrentUser();
       setUser(userData);
+      // Guardar ID de usuario actual para detectar cambios de sesión
+      localStorage.setItem('currentUserId', userData.id);
     } catch (err) {
       console.error('Error al cargar usuario:', err);
-      // Si falla, limpiar tokens
-      logout();
+      // Si es 401 (token inválido/expirado), limpiar tokens
+      if (err.response?.status === 401) {
+        console.warn('Token inválido o expirado, limpiando sesión');
+        logout();
+      } else {
+        // Por otros errores, solo hacer logout sin error crítico
+        logout();
+      }
     } finally {
       setLoading(false);
     }
@@ -56,6 +84,9 @@ export const AuthProvider = ({ children }) => {
       // Cargar datos completos del usuario
       const userData = await apiService.getCurrentUser();
       setUser(userData);
+      
+      // Guardar ID de usuario actual para detectar cambios de sesión
+      localStorage.setItem('currentUserId', userData.id);
       localStorage.setItem('user', JSON.stringify(userData));
       
       return { success: true, user: userData };
@@ -70,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
+    localStorage.removeItem('currentUserId');
     setUser(null);
   };
 
