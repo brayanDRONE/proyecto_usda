@@ -10,12 +10,14 @@ import random
 ESPECIES_HIPERGEOMETRICA_3 = [
     'Damasco',
     'Damascos',
+    'Damasco 3%',
 ]
 
 ESPECIES_HIPERGEOMETRICA_6 = [
     'Ciruela',
     'Ciruelas',
     'Damasco_condicional',
+    'Damasco 6%',
     'Durazno',
     'Duraznos',
     'Nectarino',
