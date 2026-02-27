@@ -93,10 +93,25 @@ class EstablishmentDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at', 'license_key']
     
     def get_days_until_expiry(self, obj):
+        """Calcula días hasta expiración y actualiza estado si es necesario."""
+        from django.utils import timezone
+        
         days = obj.days_until_expiry()
-        # Retornar 0 si es None o negativo (suscripción expirada)
-        if days is None or days < 0:
+        
+        # Si no hay fecha de expiración, retornar 0
+        if days is None:
             return 0
+        
+        # Si ya expiró y está marcado como ACTIVE, actualizar a EXPIRED
+        if days <= 0 and obj.subscription_status == 'ACTIVE':
+            obj.subscription_status = 'EXPIRED'
+            obj.save(update_fields=['subscription_status'])
+            return 0
+        
+        # Retornar 0 si es negativo (por si acaso)
+        if days < 0:
+            return 0
+            
         return days
     
     def get_is_expiring_soon(self, obj):
