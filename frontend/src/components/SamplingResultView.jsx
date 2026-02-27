@@ -189,7 +189,10 @@ function SamplingResultView({ result, onNewInspection }) {
     });
     
     // ==================== CERTIFICADO DE PRE-MUESTREO ====================
-    yPos = doc.lastAutoTable.finalY + 10;
+    // Posicionar siempre al final de la página (independiente de la cantidad de números)
+    const pageHeight = doc.internal.pageSize.height;
+    const certificateHeight = 65; // Altura aproximada del certificado
+    yPos = pageHeight - certificateHeight - 15; // 15mm de margen inferior
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
