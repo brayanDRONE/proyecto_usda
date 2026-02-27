@@ -93,7 +93,11 @@ class EstablishmentDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at', 'license_key']
     
     def get_days_until_expiry(self, obj):
-        return obj.days_until_expiry()
+        days = obj.days_until_expiry()
+        # Retornar 0 si es None o negativo (suscripción expirada)
+        if days is None or days < 0:
+            return 0
+        return days
     
     def get_is_expiring_soon(self, obj):
         return obj.is_expiring_soon()

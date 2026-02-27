@@ -104,7 +104,8 @@ class Establishment(models.Model):
         """Calcula días hasta que expire la suscripción."""
         if not self.subscription_expiry:
             return None
-        delta = self.subscription_expiry - timezone.now().date()
+        today = timezone.now().date()
+        delta = self.subscription_expiry - today
         return delta.days
     
     def is_expiring_soon(self, days=7):

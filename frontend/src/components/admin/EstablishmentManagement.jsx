@@ -320,12 +320,14 @@ function EstablishmentManagement() {
                     <td>{est.phone || '-'}</td>
                     <td>{getStatusBadge(est)}</td>
                     <td>
-                      {est.subscription_status === 'EXPIRED' || est.subscription_status === 'SUSPENDED' ? (
-                        <span className="days-expired">-</span>
-                      ) : (
+                      {est.subscription_status === 'EXPIRED' || est.subscription_status === 'SUSPENDED' || est.days_until_expiry <= 0 ? (
+                        <span className="days-expired">Expirado</span>
+                      ) : est.days_until_expiry !== null ? (
                         <span className={est.is_expiring_soon ? 'days-warning' : 'days-normal'}>
                           {est.days_until_expiry} días
                         </span>
+                      ) : (
+                        <span className="days-normal">-</span>
                       )}
                     </td>
                     <td>
