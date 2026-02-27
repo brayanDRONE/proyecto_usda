@@ -129,6 +129,7 @@ class EstablishmentCreateSerializer(serializers.ModelSerializer):
     admin_email = serializers.EmailField(write_only=True, required=False, allow_blank=True)
     admin_first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     admin_last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    subscription_days = serializers.IntegerField(write_only=True, default=30, min_value=1)
     
     class Meta:
         model = Establishment
@@ -137,16 +138,20 @@ class EstablishmentCreateSerializer(serializers.ModelSerializer):
             'address', 'phone', 'email', 'encargado_sag',
             'subscription_status', 'subscription_start', 'subscription_expiry',
             'admin_username', 'admin_password', 'admin_email',
-            'admin_first_name', 'admin_last_name'
+            'admin_first_name', 'admin_last_name', 'subscription_days'
         ]
     
     def create(self, validated_data):
+        from django.utils import timezone
+        from datetime import timedelta
+        
         # Extraer datos del usuario
         admin_username = validated_data.pop('admin_username')
         admin_password = validated_data.pop('admin_password')
         admin_email = validated_data.pop('admin_email')
         admin_first_name = validated_data.pop('admin_first_name', '')
         admin_last_name = validated_data.pop('admin_last_name', '')
+        subscription_days = validated_data.pop('subscription_days', 30)
         
         # Crear usuario
         admin_user = User.objects.create_user(
@@ -160,6 +165,16 @@ class EstablishmentCreateSerializer(serializers.ModelSerializer):
         # Generar license key
         import uuid
         license_key = f"EST-{uuid.uuid4().hex[:12].upper()}"
+        
+        # Calcular fecha de expiración
+        today = timezone.now().date()
+        subscription_expiry = today + timedelta(days=subscription_days)
+        subscription_start = today
+        
+        # Asegurar que subscription_status sea ACTIVE
+        validated_data['subscription_status'] = 'ACTIVE'
+        validated_data['subscription_start'] = subscription_start
+        validated_data['subscription_expiry'] = subscription_expiry
         
         # Crear establecimiento
         establishment = Establishment.objects.create(
