@@ -78,8 +78,17 @@ function EstablishmentManagement() {
     try {
       // Usar el email de contacto como email del admin
       const dataToSend = {
-        ...formData,
-        admin_email: formData.email || ''
+        exportadora: formData.exportadora,
+        planta_fruticola: formData.planta_fruticola,
+        rut: formData.rut,
+        address: formData.address,
+        phone: formData.phone,
+        email: formData.email,
+        encargado_sag: formData.encargado_sag,
+        admin_username: formData.admin_username,
+        admin_password: formData.admin_password,
+        admin_email: formData.email || '',
+        subscription_days: formData.subscription_days
       };
       
       await apiService.createEstablishment(dataToSend);
@@ -102,7 +111,22 @@ function EstablishmentManagement() {
     }
     
     try {
-      await apiService.updateEstablishment(selectedEstablishment.id, formData);
+      const dataToSend = {
+        exportadora: formData.exportadora,
+        planta_fruticola: formData.planta_fruticola,
+        rut: formData.rut,
+        address: formData.address,
+        phone: formData.phone,
+        email: formData.email,
+        encargado_sag: formData.encargado_sag
+      };
+      
+      // Solo agregar credenciales si están siendo modificadas
+      if (formData.admin_username) dataToSend.admin_username = formData.admin_username;
+      if (formData.admin_password) dataToSend.admin_password = formData.admin_password;
+      if (formData.admin_email) dataToSend.admin_email = formData.admin_email;
+      
+      await apiService.updateEstablishment(selectedEstablishment.id, dataToSend);
       setShowEditModal(false);
       resetForm();
       setSelectedEstablishment(null);
