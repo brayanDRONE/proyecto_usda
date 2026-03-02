@@ -136,7 +136,6 @@ class EstablishmentCreateSerializer(serializers.ModelSerializer):
         fields = [
             'exportadora', 'planta_fruticola', 'rut', 
             'address', 'phone', 'email', 'encargado_sag',
-            'subscription_status', 'subscription_start', 'subscription_expiry',
             'admin_username', 'admin_password', 'admin_email',
             'admin_first_name', 'admin_last_name', 'subscription_days'
         ]
