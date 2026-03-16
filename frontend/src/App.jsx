@@ -11,10 +11,23 @@ import EstablishmentManagement from './components/admin/EstablishmentManagement'
 import ThemeEditor from './components/admin/ThemeEditor';
 import InspectionApp from './components/InspectionApp';
 import LandingPage from './pages/LandingPage';
+import MaintenanceMode from './components/MaintenanceMode';
 import './App.css';
+
+// 🔧 FLAG DE MANTENIMIENTO - Cambiar a false para habilitar la aplicación
+const MAINTENANCE_MODE = true;
 
 function AppRoutes() {
   const { user, isSuperAdmin } = useAuth();
+
+  // Si está en modo de mantenimiento, mostrar solo esa página
+  if (MAINTENANCE_MODE) {
+    return (
+      <Routes>
+        <Route path="*" element={<MaintenanceMode />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
