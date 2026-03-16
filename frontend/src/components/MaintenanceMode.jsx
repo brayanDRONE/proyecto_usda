@@ -5,8 +5,7 @@
 import './MaintenanceMode.css';
 
 function MaintenanceMode() {
-  const contactEmail = 'admin@usda.gov';
-  const contactPhone = '+1-800-XXX-XXXX';
+  const contactEmail = 'brayannunez8@gmail.com';
 
   return (
     <div className="maintenance-container">
@@ -56,12 +55,6 @@ function MaintenanceMode() {
               <span className="contact-label">📧 Email:</span>
               <a href={`mailto:${contactEmail}`} className="contact-link">
                 {contactEmail}
-              </a>
-            </div>
-            <div className="contact-item">
-              <span className="contact-label">📞 Teléfono:</span>
-              <a href={`tel:${contactPhone}`} className="contact-link">
-                {contactPhone}
               </a>
             </div>
           </div>
